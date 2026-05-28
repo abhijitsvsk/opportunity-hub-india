@@ -2,6 +2,7 @@ require('dotenv').config();
 const { scrapeDevfolio } = require('./devfolio');
 const { structureData } = require('./structurer');
 const { scrapeUnstop } = require('./unstop');
+const { getStaticOpportunities } = require('./static');
 const { upsertData } = require('./upserter');
 const { notifyDiscord } = require('./notifier');
 const fs = require('fs');
@@ -155,7 +156,18 @@ async function processUnstop() {
   return { scrapedCount: structuredRecords.length, structuredRecords };
 }
 
+/**
+ * Static Sources Processing Logic
+ */
+async function processStatic() {
+  const structuredRecords = await getStaticOpportunities();
+  return { scrapedCount: structuredRecords.length, structuredRecords };
+}
+
 async function main() {
+  // Run Static Sources
+  await runPipelineSource('static', processStatic);
+
   // Run Unstop
   await runPipelineSource('unstop', processUnstop);
   
