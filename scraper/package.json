@@ -1,0 +1,14 @@
+{
+  "name": "opportunity-hub-scraper",
+  "version": "1.0.0",
+  "description": "Data collection pipeline for Opportunity Hub India",
+  "private": true,
+  "scripts": {
+    "recon:devfolio": "node recon-devfolio.js",
+    "scrape:devfolio": "node run-local.js",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "playwright": "^1.52.0"
+  }
+}
