@@ -3,6 +3,7 @@ const { scrapeDevfolio } = require('./devfolio');
 const { structureData } = require('./structurer');
 const { scrapeUnstop } = require('./unstop');
 const { upsertData } = require('./upserter');
+const { notifyDiscord } = require('./notifier');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -43,6 +44,11 @@ async function runPipelineSource(sourceName, processFn) {
       throw new Error('Missing SUPABASE_SERVICE_KEY. Cannot upsert.');
     }
     const result = await upsertData(structuredRecords, supabaseKey);
+    
+    // Notify Discord of any brand new records
+    if (result.newRecords && result.newRecords.length > 0) {
+      await notifyDiscord(result.newRecords, sourceName);
+    }
     
     console.log(`\n--- ${sourceName.toUpperCase()} PIPELINE COMPLETE ---`);
     console.log(`Success: ${result.successCount}`);

@@ -12,6 +12,22 @@ async function upsertData(records, supabaseKey) {
 
   let successCount = 0;
   let skipCount = 0;
+  const newRecords = [];
+
+  // Query existing URLs to determine which records are completely new
+  const incomingUrls = records.map(r => r.source_url).filter(Boolean);
+  let existingUrls = new Set();
+  
+  if (incomingUrls.length > 0) {
+    const { data: existingData } = await supabase
+      .from('opportunities')
+      .select('source_url')
+      .in('source_url', incomingUrls);
+      
+    if (existingData) {
+      existingUrls = new Set(existingData.map(r => r.source_url));
+    }
+  }
   
   for (const record of records) {
     if (record.error) {
@@ -45,6 +61,10 @@ async function upsertData(records, supabaseKey) {
       } else {
         console.log(`Upserted: ${record.title}`);
         successCount++;
+        
+        if (!existingUrls.has(record.source_url)) {
+          newRecords.push(record);
+        }
       }
     } catch (err) {
       console.error(`Exception upserting ${record.source_url}:`, err.message);
@@ -52,7 +72,7 @@ async function upsertData(records, supabaseKey) {
     }
   }
 
-  return { successCount, skipCount };
+  return { successCount, skipCount, newRecords };
 }
 
 module.exports = { upsertData };

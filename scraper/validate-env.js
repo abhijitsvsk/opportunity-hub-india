@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const requiredKeys = ['GEMINI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_KEY'];
+const requiredKeys = ['GEMINI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'DISCORD_WEBHOOK_URL'];
 let missing = false;
 
 for (const key of requiredKeys) {
