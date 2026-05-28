@@ -47,9 +47,9 @@ async function upsertData(records, supabaseKey) {
           deadline: record.deadline,
           deadline_confidence: record.deadline_confidence,
           domain_tags: record.domain_tags || [],
-          eligibility: record.eligibility || null,
-          effort_level: record.effort_level || null,
-          competitiveness: record.competitiveness || null,
+          eligibility: record.eligibility || { 'type': 'all' },
+          effort_level: record.effort_level || 'medium',
+          competitiveness: record.competitiveness || 'medium',
           is_active: true
         }, {
           onConflict: 'source_url'
