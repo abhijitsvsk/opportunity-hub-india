@@ -3,7 +3,7 @@
 ## Goal
 Build a working web application where a student can sign up, complete a profile,
 see a personalized and ranked list of opportunities, save opportunities they like,
-track application status, and receive deadline reminders by email.
+track application status, and receive deadline reminders by email, powered by an automated data pipeline.
 
 ## Step 1 — Supabase setup
 - Create a new Supabase project.
@@ -42,20 +42,22 @@ track application status, and receive deadline reminders by email.
 - Allow unsaving. Removed listings go to an archived state, not hard deleted.
 
 ## Step 5 — Deadline reminders
-- Use Supabase Edge Functions to run a daily check.
+- Use Supabase Edge Functions (via pg_cron) to run a daily check.
 - For every saved opportunity with a deadline in 3 days, send one reminder email
   to the user using Supabase's built-in email or a free tier of Resend.
 - Email contains: opportunity title, deadline date, and a direct link to the source URL.
 - Do not send more than one reminder per opportunity per user.
 
-## Step 6 — Admin data entry
-- Build a simple password-protected admin page.
-- Admin can add, edit, and deactivate opportunities from a form.
-- This is the only way opportunities enter the database for MVP.
-  No automated ingestion in phase 1.
+## Step 6 — Automated Data Pipeline
+- Write Supabase Edge Functions to fetch raw HTML/data from target sites (e.g., Devfolio, YC, GitHub).
+- Pipe raw text through the Gemini Free Tier API to reliably extract structured fields (deadline, tags, eligibility, effort).
+- Map the AI output to the `opportunities` table schema.
+- Upsert the records into the database (matching on `source_url` to prevent duplicates).
+- Schedule the Edge Functions to run daily using `pg_cron`.
+- Implement a cleanup script to automatically mark opportunities as inactive when their deadline passes.
 
 ## Definition of done for MVP
 - A new user can sign up, complete onboarding, see a personalized feed,
   save an opportunity, and receive a reminder email before the deadline.
-- An admin can add a new opportunity in under 2 minutes.
+- The automated pipeline successfully runs on a schedule, extracting and upserting valid opportunities without manual intervention.
 - All of the above works on mobile browser without breaking.
