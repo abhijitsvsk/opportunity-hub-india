@@ -24,14 +24,17 @@ const { chromium } = require('playwright');
 // the real DOM. Every selector here must be verified against recon-dom.html.
 // ===========================================================================
 const SELECTORS = {
-  // The CSS selector that matches individual hackathon card containers.
-  // Set to null until recon is complete. The scraper will refuse to run
-  // if this is null, forcing you to do recon first.
-  CARD_CONTAINER: null,
+  // Verified from recon-output/recon-dom.html (2026-05-28)
+  // Card container: <div class="... CompactHackathonCard__StyledCard-sc-HASH ...">
+  // Using the stable component name prefix. The hash suffix (sc-4be46104-0) may change
+  // on Devfolio deploys, but "CompactHackathonCard__StyledCard" is the component name
+  // which is stable across builds.
+  CARD_CONTAINER: 'div[class*="CompactHackathonCard__StyledCard"]',
 
-  // The CSS selector (relative to a card) for the anchor tag containing the hackathon URL.
-  // If the card itself is an <a> tag, set this to null and the card's href will be used.
-  CARD_LINK: null,
+  // Link inside card: <a href="https://[slug].devfolio.co/" class="Link__LinkBase-sc-...">
+  // The hackathon URL is inside the card, not wrapping it.
+  // Using the Link component class prefix for stability.
+  CARD_LINK: 'a[class*="Link__LinkBase"]',
 };
 
 // ===========================================================================
@@ -46,29 +49,17 @@ const CONFIG = {
   UNCHANGED_SCROLLS_BEFORE_STOP: 2,   // Stop scrolling after N scrolls with no new content
   MAX_NAVIGATION_RETRIES: 3,
   RETRY_DELAY_MS: 3000,
-  MIN_RAW_TEXT_LENGTH: 150,            // Minimum characters for a card to be considered valid
+  MIN_RAW_TEXT_LENGTH: 50,             // Calibrated: real Devfolio cards are 98-120 chars
 };
 
 // ===========================================================================
-// DATE VALIDATION — Require a real date pattern, not just any number
+// CONTENT VALIDATION
 // ===========================================================================
-// Matches patterns like: "Jan 15", "15 Jan", "2025-01-15", "01/15/2025", "January 15"
-const DATE_PATTERN = new RegExp(
-  [
-    // Full or abbreviated month names followed by a number
-    '(?:january|february|march|april|may|june|july|august|september|october|november|december|' +
-    'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)' +
-    '\\s+\\d{1,2}',
-    // Number followed by month name
-    '\\d{1,2}\\s+(?:january|february|march|april|may|june|july|august|september|october|november|december|' +
-    'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)',
-    // ISO-like dates: 2025-01-15
-    '\\d{4}-\\d{2}-\\d{2}',
-    // Slash dates: 01/15/2025 or 15/01/2025
-    '\\d{1,2}/\\d{1,2}/\\d{2,4}',
-  ].join('|'),
-  'i'
-);
+// Date pattern is NOT used as a hard filter because live hackathons on Devfolio
+// show "LIVE" instead of a date. Instead, we validate that the card contains
+// the word "Hackathon" (or similar type indicator) as a basic quality signal
+// that this is a real listing card and not a navigation element.
+const CARD_TYPE_PATTERN = /hackathon|fellowship|competition|challenge|buildathon/i;
 
 /**
  * Scrapes hackathon listings from Devfolio.
@@ -172,14 +163,14 @@ async function scrapeDevfolio() {
     // ---- Extract card data ----
     console.log('Extracting raw card data...');
     const extractedData = await page.evaluate(
-      ({ cardSelector, linkSelector, minLength, datePatternStr }) => {
-        const dateRegex = new RegExp(datePatternStr, 'i');
+      ({ cardSelector, linkSelector, minLength, typePatternStr }) => {
+        const typeRegex = new RegExp(typePatternStr, 'i');
         const cards = Array.from(document.querySelectorAll(cardSelector));
         const results = [];
         const seenUrls = new Set();
 
         cards.forEach(card => {
-          // Get the URL: either from a child link element or from the card itself if it's an <a>
+          // Get the URL from the Link__LinkBase anchor inside the card
           let url;
           if (linkSelector) {
             const linkEl = card.querySelector(linkSelector);
@@ -194,9 +185,9 @@ async function scrapeDevfolio() {
 
           // Quality filters:
           // 1. Minimum text length to exclude nav elements and buttons
-          // 2. Must contain a recognizable date pattern (not just any number)
+          // 2. Must contain a type keyword (e.g., "Hackathon") to confirm it's a real listing
           // 3. No duplicate URLs
-          if (rawText.length >= minLength && dateRegex.test(rawText) && !seenUrls.has(url)) {
+          if (rawText.length >= minLength && typeRegex.test(rawText) && !seenUrls.has(url)) {
             seenUrls.add(url);
             results.push({
               source_url: url,
@@ -211,7 +202,7 @@ async function scrapeDevfolio() {
         cardSelector: SELECTORS.CARD_CONTAINER,
         linkSelector: SELECTORS.CARD_LINK,
         minLength: CONFIG.MIN_RAW_TEXT_LENGTH,
-        datePatternStr: DATE_PATTERN.source
+        typePatternStr: CARD_TYPE_PATTERN.source
       }
     );
 
