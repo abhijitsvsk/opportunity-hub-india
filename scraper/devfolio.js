@@ -214,8 +214,114 @@ async function scrapeDevfolio() {
       );
     }
 
-    console.log(`Successfully extracted ${extractedData.length} hackathon cards.`);
-    return extractedData;
+    console.log(`Successfully extracted ${extractedData.length} hackathon cards from listing.`);
+
+    // ---- Filter ENDED cards ----
+    const activeCards = extractedData.filter(card => !/ENDED/i.test(card.raw_text));
+    console.log(`Filtered out ${extractedData.length - activeCards.length} ended hackathons. ${activeCards.length} remaining for deep scrape.`);
+
+    // ---- Deep Scrape Enricher ----
+    const enrichedData = [];
+    for (let i = 0; i < activeCards.length; i++) {
+      const card = activeCards[i];
+      console.log(`[${i + 1}/${activeCards.length}] Deep scraping: ${card.source_url}`);
+      
+      const detailPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+      let deadline = null;
+      let deadlineConfidence = 'unknown';
+      let fullText = card.raw_text;
+
+      try {
+        await detailPage.goto(card.source_url, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        
+        // Wait a short bit for React to render countdowns
+        await detailPage.waitForTimeout(3000);
+
+        const pageData = await detailPage.evaluate(() => {
+          const bodyText = document.body.innerText;
+          const htmlText = document.documentElement.innerHTML;
+          
+          // Look for countdown pattern in HTML since innerText might sometimes drop it due to layout
+          let countdownStr = null;
+          const countdownMatch = htmlText.match(/(?:APPLICATIONS CLOSE IN|closes? in|ends? in)[\s\S]{0,200}?(\d+d:\d+h:\d+m)/i);
+          if (countdownMatch && countdownMatch[1]) {
+            countdownStr = countdownMatch[1];
+          }
+
+          // Fallback: look for static dates in the text like "STARTS 25/07/26", "ENDS 13/06/26"
+          let staticDateStr = null;
+          const staticMatch = bodyText.match(/(?:STARTS?|ENDS?|DEADLINE|CLOSES?)\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+          if (staticMatch && staticMatch[1]) {
+            staticDateStr = staticMatch[1];
+          }
+
+          return {
+            fullText: bodyText.trim(),
+            countdownStr: countdownStr,
+            staticDateStr: staticDateStr
+          };
+        });
+
+        if (pageData.fullText) {
+          // Combine card text (which has theme tags) with full page text
+          fullText = card.raw_text + '\n\n--- DETAILS ---\n' + pageData.fullText;
+        }
+
+        if (pageData.countdownStr) {
+          // Parse "Xd:Yh:Zm"
+          const parts = pageData.countdownStr.match(/(\d+)d:(\d+)h:(\d+)m/);
+          if (parts) {
+            const days = parseInt(parts[1], 10);
+            const hours = parseInt(parts[2], 10);
+            const minutes = parseInt(parts[3], 10);
+            
+            const msToAdd = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (minutes * 60 * 1000);
+            const absoluteDeadline = new Date(Date.now() + msToAdd);
+            absoluteDeadline.setMinutes(0, 0, 0);
+            
+            deadline = absoluteDeadline.toISOString();
+            deadlineConfidence = 'computed_from_countdown';
+            console.log(`  -> Found countdown: ${pageData.countdownStr} => ${deadline}`);
+          }
+        } else if (pageData.staticDateStr) {
+          // Parse DD/MM/YY
+          const parts = pageData.staticDateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+          if (parts) {
+            const day = parts[1].padStart(2, '0');
+            const month = parts[2].padStart(2, '0');
+            let year = parts[3];
+            if (year.length === 2) year = '20' + year; // Convert 26 to 2026
+            
+            deadline = `${year}-${month}-${day}T23:59:59Z`;
+            deadlineConfidence = 'extracted_from_text';
+            console.log(`  -> Found static date: ${pageData.staticDateStr} => ${deadline} (Note: may be a start date, not application deadline)`);
+            
+            // Add explicit note to text for Gemini
+            fullText += `\n\nNOTE: A date was extracted from the text: ${pageData.staticDateStr}. This may be the event start date, not the application deadline.`;
+          }
+        } else {
+          console.log(`  -> No countdown or static date found. Marking as deadline_unknown.`);
+        }
+      } catch (err) {
+        console.warn(`  -> Failed to load or extract from ${card.source_url}: ${err.message}. Marking as deadline_unknown.`);
+      } finally {
+        await detailPage.close();
+      }
+
+      // We only take the first 3000 chars of fullText to save Gemini tokens, 
+      // but keep enough context to extract the needed fields.
+      const truncatedText = fullText.substring(0, 3000);
+
+      enrichedData.push({
+        source_url: card.source_url,
+        raw_text: truncatedText,
+        deadline: deadline,
+        deadline_confidence: deadlineConfidence
+      });
+    }
+
+    console.log(`Deep scrape complete. Returning ${enrichedData.length} enriched records.`);
+    return enrichedData;
 
   } finally {
     // Always close the browser, even if extraction throws

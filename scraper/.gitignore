@@ -1,2 +1,5 @@
 recon-output/
 node_modules/
+scrape-results.json
+**/.env
+**/.env.local
