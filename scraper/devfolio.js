@@ -232,10 +232,10 @@ async function scrapeDevfolio() {
       let fullText = card.raw_text;
 
       try {
-        await detailPage.goto(card.source_url, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        await detailPage.goto(card.source_url, { waitUntil: 'domcontentloaded', timeout: 30000 });
         
         // Wait a short bit for React to render countdowns
-        await detailPage.waitForTimeout(3000);
+        await detailPage.waitForTimeout(6000);
 
         const pageData = await detailPage.evaluate(() => {
           const bodyText = document.body.innerText;
