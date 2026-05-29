@@ -12,6 +12,7 @@ async function upsertData(records, supabaseKey) {
 
   let successCount = 0;
   let skipCount = 0;
+  let failCount = 0;
   const newRecords = [];
 
   // Query existing URLs to determine which records are completely new
@@ -57,7 +58,7 @@ async function upsertData(records, supabaseKey) {
 
       if (error) {
         console.error(`Error upserting ${record.source_url}:`, error.message);
-        skipCount++;
+        failCount++;
       } else {
         console.log(`Upserted: ${record.title}`);
         successCount++;
@@ -68,11 +69,11 @@ async function upsertData(records, supabaseKey) {
       }
     } catch (err) {
       console.error(`Exception upserting ${record.source_url}:`, err.message);
-      skipCount++;
+      failCount++;
     }
   }
 
-  return { successCount, skipCount, newRecords };
+  return { successCount, skipCount, failCount, newRecords };
 }
 
 module.exports = { upsertData };

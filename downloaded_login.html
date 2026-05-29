@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OpportunityHub - Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#e1fdff",
+                        "on-error": "#690005",
+                        "surface-variant": "#2e3637",
+                        "surface": "#0d1515",
+                        "on-secondary": "#3c0091",
+                        "surface-container-low": "#151d1e",
+                        "tertiary-fixed": "#ffe173",
+                        "on-primary": "#00363a",
+                        "background": "#0d1515",
+                        "secondary": "#d0bcff",
+                        "error": "#ffb4ab",
+                        "surface-container": "#192122",
+                        "primary-fixed-dim": "#00dbe7",
+                        "outline-variant": "#3a494b",
+                        "surface-dim": "#0d1515",
+                        "outline": "#849495",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#fff6e4",
+                        "on-tertiary-container": "#725e00",
+                        "on-primary-fixed": "#002022",
+                        "inverse-on-surface": "#2a3232",
+                        "on-surface-variant": "#b9cacb",
+                        "on-secondary-container": "#c4abff",
+                        "surface-container-lowest": "#080f10",
+                        "on-tertiary-fixed-variant": "#554500",
+                        "primary-container": "#00f2ff",
+                        "on-surface": "#dce4e4",
+                        "inverse-surface": "#dce4e4",
+                        "tertiary-fixed-dim": "#e8c423",
+                        "on-background": "#dce4e4",
+                        "secondary-container": "#571bc1",
+                        "on-primary-fixed-variant": "#004f54",
+                        "surface-container-highest": "#2e3637",
+                        "on-primary-container": "#006a71",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "on-tertiary": "#3b2f00",
+                        "on-tertiary-fixed": "#221b00",
+                        "surface-tint": "#00dbe7",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "on-secondary-fixed": "#23005c",
+                        "tertiary-container": "#fed83a",
+                        "surface-container-high": "#232b2c",
+                        "secondary-fixed": "#e9ddff",
+                        "inverse-primary": "#00696f",
+                        "error-container": "#93000a",
+                        "surface-bright": "#333b3b",
+                        "primary-fixed": "#74f5ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-height": "520px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "gutter": "24px",
+                        "sidebar-width": "280px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "label-code": ["JetBrains Mono"],
+                        "display-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-code": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex items-center justify-center relative overflow-hidden font-body-lg text-body-lg">
+<!-- Atmospheric Background Effects -->
+<div class="absolute inset-0 z-0 pointer-events-none">
+<div class="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-secondary-container/20 blur-[120px]"></div>
+<div class="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-primary-container/10 blur-[150px]"></div>
+</div>
+<!-- Login Container -->
+<main class="z-10 w-full max-w-md px-margin-mobile md:px-0">
+<!-- Header -->
+<header class="text-center mb-12">
+<h1 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-primary-fixed-dim mb-4 tracking-tight">OpportunityHub</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Your next big opportunity is one scroll away.</p>
+</header>
+<!-- Glassmorphic Login Card -->
+<div class="bg-surface-container-lowest/40 backdrop-blur-2xl border border-outline-variant/30 rounded-xl p-8 shadow-2xl relative overflow-hidden">
+<!-- Subtle internal glow top border -->
+<div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary-fixed-dim/30 to-transparent"></div>
+<!-- Form Placeholder (Semantic) -->
+<form action="#" class="flex flex-col gap-6" method="POST">
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider" for="email">Email Address</label>
+<input class="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary-fixed-dim focus:ring-1 focus:ring-primary-fixed-dim transition-all duration-200 placeholder-on-surface-variant/50" id="email" name="email" placeholder="developer@future.com" type="email"/>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider" for="password">Password</label>
+<a class="font-label-caps text-label-caps text-primary-fixed-dim hover:text-primary transition-colors" href="#">Forgot?</a>
+</div>
+<input class="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary-fixed-dim focus:ring-1 focus:ring-primary-fixed-dim transition-all duration-200 placeholder-on-surface-variant/50" id="password" name="password" placeholder="••••••••" type="password"/>
+</div>
+<button class="w-full bg-primary text-on-primary font-headline-md text-headline-md rounded-lg py-3 mt-2 hover:bg-primary-fixed hover:shadow-[0_0_15px_rgba(0,219,231,0.3)] transition-all duration-200" type="submit">
+                    Sign In
+                </button>
+</form>
+<div class="mt-8 flex items-center gap-4">
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+<span class="font-label-code text-label-code text-on-surface-variant uppercase">or</span>
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+</div>
+<!-- GitHub OAuth Button -->
+<button class="w-full mt-8 bg-surface-container/50 backdrop-blur-xl border border-outline-variant/40 hover:border-outline-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg py-3 flex items-center justify-center gap-3 group" type="button">
+<span class="material-symbols-outlined text-on-surface group-hover:text-primary-fixed-dim transition-colors" data-icon="code">code</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">Continue with GitHub</span>
+</button>
+<!-- Sign Up Link -->
+<div class="mt-8 text-center">
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    New to the hub? <a class="text-primary-fixed-dim hover:text-primary font-medium transition-colors" href="#">Request Access</a>
+</p>
+</div>
+</div>
+</main>
+</body></html>

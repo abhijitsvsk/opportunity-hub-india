@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  
+  --color-background: #0B0E14;
+  --color-surface-lowest: #0B0E14;
+  --color-surface-low: #131822;
+  --color-surface-high: #202735;
+  
+  --color-primary: #00FF88;
+  --color-primary-container: #00D1FF;
+  
+  --color-secondary: #6366F1;
+  
+  --color-text-main: #FFFFFF;
+  --color-text-muted: #8E9BAE;
+  
+  --color-error: #FF3B3B;
+  --color-warning: #FFB020;
+}
+
+:root {
+  background-color: var(--color-background);
+  color: var(--color-text-main);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-background);
+  color: var(--color-text-main);
+  /* The layout needs to be full height and prevent main body scrolling 
+     to feel like a snap-scrolling app */
+  overflow: hidden;
+}
+
+/* Snap scrolling container */
+.snap-y-container {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100vh;
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  background: rgba(28, 32, 37, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fade-in animation for feed refresh */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 200ms ease-out both;
+}

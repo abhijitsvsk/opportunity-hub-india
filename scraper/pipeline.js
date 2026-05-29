@@ -20,6 +20,7 @@ async function runPipelineSource(sourceName, processFn) {
     recordsStructured: 0,
     recordsUpserted: 0,
     recordsSkipped: 0,
+    recordsFailed: 0,
     errorMessage: null
   };
 
@@ -58,6 +59,7 @@ async function runPipelineSource(sourceName, processFn) {
     
     stats.recordsUpserted = result.successCount;
     stats.recordsSkipped = result.skipCount;
+    stats.recordsFailed = result.failCount;
     stats.status = 'success';
     
   } catch (error) {
@@ -80,6 +82,7 @@ async function runPipelineSource(sourceName, processFn) {
           records_structured: stats.recordsStructured,
           records_upserted: stats.recordsUpserted,
           records_skipped: stats.recordsSkipped,
+          records_failed: stats.recordsFailed,
           error_message: stats.errorMessage
         }]);
         console.log(`Logged ${sourceName} pipeline run to database.`);
@@ -122,9 +125,9 @@ async function processDevfolio() {
       failedRecords.push({ url: record.source_url, raw: record.raw_text, error: err.message });
     }
     
-    // Delay 4 seconds to respect Gemini free tier limits (15 RPM)
+    // Delay 5 seconds to respect Gemini free tier limits (15 RPM)
     if (i < scrapedRecords.length - 1) {
-      await new Promise(r => setTimeout(r, 4000));
+      await new Promise(r => setTimeout(r, 5000));
     }
   }
 
