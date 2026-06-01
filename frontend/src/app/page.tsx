@@ -50,7 +50,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="w-full h-full overflow-y-auto bg-background text-text-main flex flex-col relative selection:bg-primary/30">
+    <div className="w-full h-full overflow-x-hidden overflow-y-auto bg-background text-text-main flex flex-col relative selection:bg-primary/30">
       {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[150px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-secondary/10 blur-[150px] rounded-full pointer-events-none"></div>

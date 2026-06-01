@@ -94,7 +94,7 @@ export default function OnboardingPage() {
 
   if (completed) {
     return (
-      <div className="h-full w-full overflow-y-auto bg-background text-text-main flex flex-col items-center justify-center relative font-sans">
+      <div className="h-full w-full overflow-x-hidden overflow-y-auto bg-background text-text-main flex flex-col items-center justify-center relative font-sans">
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-secondary/20 blur-[120px]"></div>
         </div>
@@ -110,7 +110,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-background text-text-main py-12 px-4 relative font-sans">
+    <div className="h-full w-full overflow-x-hidden overflow-y-auto bg-background text-text-main py-12 px-4 relative font-sans">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[30vh] bg-primary/10 blur-[150px] rounded-full pointer-events-none"></div>
 
       <div className="max-w-2xl mx-auto z-10 relative">
