@@ -279,7 +279,7 @@ export default function Feed({
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
       
       <nav className="w-24 border-r border-surface-low/30 bg-surface-lowest flex flex-col items-center py-8 gap-8 z-50 shrink-0">
         <button 
