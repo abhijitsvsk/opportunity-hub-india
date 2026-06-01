@@ -450,11 +450,16 @@ export default function Feed({
                       <p className="text-sm text-text-muted line-clamp-3 leading-relaxed max-w-[90%] mt-3">{card.description}</p>
                       
                       <div className="flex flex-wrap justify-center gap-2 mt-4">
-                        {card.domain_tags && card.domain_tags.map(tag => (
+                        {card.domain_tags && card.domain_tags.slice(0, 4).map(tag => (
                           <span key={tag} className="px-3 py-1 bg-surface-high rounded-full text-xs font-mono text-text-muted">
                             {tag}
                           </span>
                         ))}
+                        {card.domain_tags && card.domain_tags.length > 4 && (
+                          <span className="px-3 py-1 bg-surface-high/50 border border-surface-high rounded-full text-xs font-mono text-text-muted">
+                            +{card.domain_tags.length - 4} more
+                          </span>
+                        )}
                       </div>
                     </div>
 
