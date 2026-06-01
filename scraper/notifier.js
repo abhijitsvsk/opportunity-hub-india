@@ -87,5 +87,53 @@ async function notifyDiscord(newRecords, sourceName) {
     }
   }
 }
+/**
+ * Notifies Discord of pipeline errors and significant failure thresholds
+ * Must be wrapped in try/catch to prevent nested pipeline failures.
+ * Explicit Rule: This should never be called more than once per pipeline run per source.
+ */
+async function notifyDiscordError(sourceName, errorMsg, stats) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.log('Skipping Discord error notification: DISCORD_WEBHOOK_URL not set.');
+    return;
+  }
 
-module.exports = { notifyDiscord };
+  const payload = {
+    content: `🚨 **ALERT: Pipeline Failure in ${sourceName}** @here`,
+    embeds: [
+      {
+        title: `Pipeline Error Details`,
+        description: errorMsg,
+        color: 0xED4245, // Discord Red
+        fields: [
+          { name: 'Scraped', value: `${stats.recordsScraped || 0}`, inline: true },
+          { name: 'Structured', value: `${stats.recordsStructured || 0}`, inline: true },
+          { name: 'Upserted', value: `${stats.recordsUpserted || 0}`, inline: true },
+          { name: 'Failed', value: `${stats.recordsFailed || 0}`, inline: true },
+          { name: 'Skipped', value: `${stats.recordsSkipped || 0}`, inline: true }
+        ],
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!res.ok) {
+      console.error(`Discord error webhook failed: ${res.status} ${res.statusText}`);
+    } else {
+      console.log(`Successfully sent error alert to Discord.`);
+    }
+  } catch (err) {
+    // If webhook itself fails, log to console only. Never crash the pipeline reporting.
+    console.error(`Exception sending error to Discord webhook:`, err.message);
+  }
+}
+
+module.exports = { notifyDiscord, notifyDiscordError };

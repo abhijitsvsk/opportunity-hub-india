@@ -1,47 +1,64 @@
+const TECH_KEYWORDS = ['developer', 'software', 'engineer', 'data', 'product', 'ai', 'ml', 'design', 'designer', 'research', 'analyst', 'security', 'cloud', 'devrel', 'technical', 'backend', 'frontend', 'fullstack', 'mobile', 'ios', 'android', 'blockchain', 'web3', 'infrastructure'];
+
 async function scrapeUnstop() {
-  console.log('Fetching open hackathons from Unstop API...');
+  console.log('Fetching opportunities from Unstop API...');
   
   const records = [];
-  let page = 1;
-  let lastPage = 1;
+  const categories = ['hackathons', 'internships', 'jobs', 'fellowships'];
   
-  // We will loop through pagination just in case it grows beyond 100
-  while (page <= lastPage) {
-    const url = `https://unstop.com/api/public/opportunity/search-result?opportunity=hackathons&page=${page}&per_page=100&oppstatus=open`;
-    const res = await fetch(url);
+  for (const category of categories) {
+    let page = 1;
+    let lastPage = 1;
     
-    if (!res.ok) {
-      throw new Error(`Unstop API failed with status: ${res.status}`);
-    }
-    
-    const data = await res.json();
-    lastPage = data.data.last_page || 1;
-    
-    const items = data.data.data || [];
-    for (const item of items) {
-      // Map directly to our structured schema
-      const mappedRecord = {
-        title: item.title,
-        type: 'hackathon',
-        // Unstop sometimes uses opportunity_config for banners, fallback to details or title
-        description: extractDescription(item),
-        source_url: item.seo_url,
-        deadline: extractDeadline(item),
-        source_of_deadline: 'Unstop API regnRequirements.end_regn_dt',
-        domain_tags: extractTags(item),
-        eligibility: extractEligibility(item) || { 'type': 'all' },
-        effort_level: 'medium',
-        competitiveness: 'medium',
-        deadline_confidence: 'exact'
-      };
+    // We will loop through pagination, capping at max 3 pages (300 items) per category
+    while (page <= lastPage && page <= 3) {
+      const url = `https://unstop.com/api/public/opportunity/search-result?opportunity=${category}&page=${page}&per_page=100&oppstatus=open`;
+      const res = await fetch(url);
       
-      // If the API provided a deadline, we consider it valid. If not, it skips.
-      if (mappedRecord.deadline) {
-        records.push(mappedRecord);
+      if (!res.ok) {
+        throw new Error(`Unstop API failed with status: ${res.status}`);
       }
+      
+      const data = await res.json();
+      lastPage = data.data.last_page || 1;
+      
+      const items = data.data.data || [];
+      for (const item of items) {
+        const desc = extractDescription(item).toLowerCase();
+        const title = (item.title || '').toLowerCase();
+        
+        // Strict keyword filter
+        const isTechRole = TECH_KEYWORDS.some(kw => title.includes(kw) || desc.includes(kw));
+        if (!isTechRole) {
+          continue; // Drop non-tech roles
+        }
+        
+        // Map types
+        let mappedType = category === 'jobs' ? 'full-time' : category === 'hackathons' ? 'hackathon' : category === 'fellowships' ? 'fellowship' : 'internship';
+
+        const mappedRecord = {
+          title: item.title,
+          type: mappedType,
+          description: extractDescription(item),
+          source_url: item.seo_url,
+          deadline: extractDeadline(item),
+          source_of_deadline: 'Unstop API regnRequirements.end_regn_dt',
+          domain_tags: extractTags(item),
+          eligibility: extractEligibility(item) || { 'type': 'all' },
+          effort_level: 'medium',
+          competitiveness: 'medium',
+          deadline_confidence: 'exact'
+        };
+        
+        if (mappedRecord.deadline) {
+          records.push(mappedRecord);
+        }
+      }
+      
+      page++;
+      // Delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 2000));
     }
-    
-    page++;
   }
   
   console.log(`Unstop API scrape complete. Mapped ${records.length} valid structured records.`);

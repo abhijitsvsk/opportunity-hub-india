@@ -80,21 +80,58 @@ serve(async (req) => {
       notificationsByUser.get(saved.user_id).push(opp);
     }
 
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
     let emailsSent = 0;
 
     // Iterate and "send" emails
     for (const [userId, opps] of notificationsByUser.entries()) {
-      // In a real implementation, you would:
-      // 1. Fetch user's email from auth.users (via service role)
-      // 2. Construct the email HTML
-      // 3. Send via Resend/Sendgrid API
-      
-      console.log(`[MVP LOG] Would send email to User(${userId}) about ${opps.length} opportunities closing soon.`);
-      opps.forEach(o => {
-        console.log(`   -> Reminder: ${o.title} closes on ${new Date(o.deadline).toLocaleDateString()}`);
-      });
-      
-      emailsSent++;
+      try {
+        // Fetch user email
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+        if (userError || !userData?.user?.email) {
+          console.error(`Could not fetch email for user ${userId}`);
+          continue;
+        }
+
+        const email = userData.user.email;
+        const htmlContent = `
+          <h2>Action Required: Opportunities closing in 3 days!</h2>
+          <p>Hi there,</p>
+          <p>The following opportunities you saved are closing very soon:</p>
+          <ul>
+            ${opps.map((o: any) => `<li><strong>${o.title}</strong> - Closes on ${new Date(o.deadline).toLocaleDateString()}</li>`).join('')}
+          </ul>
+          <p>Good luck!</p>
+          <p>— The Opportunity Hub Team</p>
+        `;
+
+        if (!resendApiKey) {
+          throw new Error('RESEND_API_KEY is missing. Cannot send emails.');
+        }
+
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${resendApiKey}`
+          },
+          body: JSON.stringify({
+            from: 'Opportunity Hub <notifications@opportunityhub.com>',
+            to: [email],
+            subject: `🚨 ${opps.length} Saved Opportunities Closing in 3 Days!`,
+            html: htmlContent
+          })
+        });
+
+        if (!res.ok) {
+          console.error(`Resend API error for ${email}:`, await res.text());
+        } else {
+          console.log(`Sent reminder email to ${email}`);
+          emailsSent++;
+        }
+      } catch (e) {
+        console.error(`Error processing user ${userId}:`, e);
+      }
     }
 
     return new Response(JSON.stringify({ 

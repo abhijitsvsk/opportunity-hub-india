@@ -76,10 +76,9 @@ Service role key is stored as a GitHub Actions secret, never hardcoded.
 
 ## Step 6 — Deadline reminders
 - Use Supabase Edge Functions (via pg_cron) to run a daily check.
-- For every saved opportunity with a deadline in 3 days, send one reminder email
-  to the user using Supabase's built-in email or a free tier of Resend.
-- Email contains: opportunity title, deadline date, and a direct link to the source URL.
-- Do not send more than one reminder per opportunity per user.
+- For every saved opportunity with a deadline in 3 days, send a reminder email to the user.
+- **Spec Deviation (Approved)**: To stay within the Resend free tier (100 emails/day), the edge function groups all closing opportunities by user and sends a single **daily digest email** per user containing bullet points of all their closing deadlines, rather than one email per opportunity.
+- Email contains: opportunity titles, deadline dates, and direct links to the source URLs.
 
 ## Definition of done for MVP
 - A new user can sign up, complete onboarding, see a personalized feed,

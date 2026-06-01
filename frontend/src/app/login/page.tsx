@@ -2,14 +2,17 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { Code } from "lucide-react";
-import { testSignIn } from "@/app/actions";
+import { signIn, signUp } from "@/app/actions";
 
-export default async function LoginPage() {
+export default async function LoginPage(
+  props: { searchParams: Promise<{ error?: string }> }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (session) {
-    redirect("/");
+  if (user) {
+    redirect("/dashboard");
   }
 
   const signInWithGithub = async () => {
@@ -34,7 +37,7 @@ export default async function LoginPage() {
   };
 
   return (
-    <div className="bg-background text-text-main min-h-screen flex items-center justify-center relative overflow-hidden font-sans">
+    <div className="bg-background text-text-main min-h-screen flex flex-col relative overflow-x-hidden overflow-y-auto font-sans p-4">
       
       {/* Atmospheric Background Effects */}
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -43,7 +46,7 @@ export default async function LoginPage() {
       </div>
       
       {/* Login Container */}
-      <main className="z-10 w-full max-w-md px-6 md:px-0">
+      <main className="z-10 w-full max-w-md px-6 md:px-0 mx-auto my-auto py-12">
         
         {/* Header */}
         <header className="text-center mb-12">
@@ -55,46 +58,90 @@ export default async function LoginPage() {
         <div className="bg-surface-low/40 backdrop-blur-2xl border border-surface-high/50 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
           
           {/* Subtle internal glow top border */}
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
-          
-          <form 
-            action={testSignIn} 
-            className="flex flex-col gap-6"
-          >
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-text-muted uppercase tracking-wider" htmlFor="email">Email Address</label>
-              <input 
-                className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 placeholder-text-muted/50" 
-                id="email" 
-                name="email" 
-                placeholder="developer@future.com" 
-                defaultValue="test@example.com"
-                type="email"
-              />
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+
+          {searchParams?.error && (
+            <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center justify-center">
+              <p className="text-red-400 text-sm font-medium text-center">{searchParams.error}</p>
             </div>
-            
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-text-muted uppercase tracking-wider" htmlFor="password">Password</label>
-                <a className="text-xs font-bold text-primary hover:brightness-125 transition-colors" href="#">Forgot?</a>
+          )}
+
+          {/* Auth Forms Container */}
+          <div className="flex flex-col gap-6 relative z-10">
+            {/* Sign In Form */}
+            <form action={signIn} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-text-muted uppercase tracking-wider" htmlFor="email-signin">Email Address</label>
+                <input 
+                  className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200" 
+                  id="email-signin" 
+                  name="email" 
+                  placeholder="developer@future.com" 
+                  required
+                  type="email"
+                />
               </div>
-              <input 
-                className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 placeholder-text-muted/50" 
-                id="password" 
-                name="password" 
-                placeholder="••••••••" 
-                defaultValue="password123"
-                type="password"
-              />
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-text-muted uppercase tracking-wider" htmlFor="password-signin">Password</label>
+                <input 
+                  className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200" 
+                  id="password-signin" 
+                  name="password" 
+                  placeholder="••••••••" 
+                  required
+                  type="password"
+                />
+              </div>
+              
+              <button 
+                className="w-full bg-primary text-[#002113] font-bold text-base rounded-lg py-3 hover:brightness-110 hover:shadow-[0_0_15px_rgba(78,222,99,0.3)] transition-all duration-200" 
+                type="submit"
+              >
+                Sign In
+              </button>
+            </form>
+
+            <div className="flex items-center gap-4">
+              <div className="h-[1px] flex-1 bg-surface-high/50"></div>
+              <span className="text-xs font-mono text-text-muted uppercase">or create new account</span>
+              <div className="h-[1px] flex-1 bg-surface-high/50"></div>
             </div>
-            
-            <button 
-              className="w-full bg-primary text-[#002113] font-bold text-base rounded-lg py-3 mt-2 hover:brightness-110 hover:shadow-[0_0_15px_rgba(78,222,99,0.3)] transition-all duration-200" 
-              type="submit"
-            >
-              Sign In (Test Mode)
-            </button>
-          </form>
+
+            {/* Sign Up Form */}
+            <form action={signUp} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-text-muted uppercase tracking-wider" htmlFor="email-signup">New Email Address</label>
+                <input 
+                  className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200" 
+                  id="email-signup" 
+                  name="email" 
+                  placeholder="new-developer@future.com" 
+                  required
+                  type="email"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-text-muted uppercase tracking-wider" htmlFor="password-signup">New Password</label>
+                <input 
+                  className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200" 
+                  id="password-signup" 
+                  name="password" 
+                  placeholder="••••••••" 
+                  required
+                  type="password"
+                />
+              </div>
+
+              <button 
+                className="w-full bg-transparent border border-primary/50 text-primary font-bold text-base rounded-lg py-3 hover:bg-primary/10 transition-all duration-200" 
+                type="submit"
+              >
+                Create Account
+              </button>
+            </form>
+          </div>
 
           <div className="mt-8 flex items-center gap-4">
             <div className="h-[1px] flex-1 bg-surface-high/50"></div>
@@ -112,13 +159,6 @@ export default async function LoginPage() {
               <span className="text-sm font-medium text-text-main">Continue with GitHub</span>
             </button>
           </form>
-
-          {/* Sign Up Link */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-text-muted">
-              New to the hub? <a className="text-primary hover:brightness-125 font-medium transition-colors" href="#">Request Access</a>
-            </p>
-          </div>
           
         </div>
       </main>

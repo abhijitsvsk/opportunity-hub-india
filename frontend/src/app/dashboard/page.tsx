@@ -5,68 +5,129 @@ import { getUserProfile } from "@/app/actions";
 
 export const dynamic = 'force-dynamic';
 
+function parseCurrentYear(yearStr: string) {
+  if (yearStr === "1st Year") return 1;
+  if (yearStr === "2nd Year") return 2;
+  if (yearStr === "3rd Year") return 3;
+  if (yearStr === "4th Year") return 4;
+  if (yearStr === "Postgraduate") return 5;
+  return null;
+}
+
 function calculateScore(opp: any, profile: any) {
   let score = 0;
   
-  // 1. Profile Match
-  if (profile) {
-    if (profile.focus_area && opp.type.toLowerCase().includes(profile.focus_area.toLowerCase().replace('looking for ', ''))) {
-      score += 20;
-    }
-    if (profile.tech_stack && profile.tech_stack.length > 0 && opp.domain_tags) {
-      const matchCount = profile.tech_stack.filter((tech: string) => 
-        opp.domain_tags.some((tag: string) => tag.toLowerCase().includes(tech.toLowerCase()))
-      ).length;
-      score += matchCount * 5;
+  if (!profile) return score;
+
+  // 1. Tech Stack Match (High Signal)
+  if (profile.tech_stack && profile.tech_stack.length > 0 && opp.domain_tags) {
+    const matchCount = profile.tech_stack.filter((tech: string) => 
+      opp.domain_tags.some((tag: string) => tag.toLowerCase().includes(tech.toLowerCase()))
+    ).length;
+    score += matchCount * 10;
+  }
+
+  // 2. Experience Level Match
+  if (profile.experience_level) {
+    const desc = (opp.description || '').toLowerCase();
+    const title = (opp.title || '').toLowerCase();
+    
+    if (profile.experience_level === 'Fresher') {
+      if (title.includes('fresher') || title.includes('entry level') || title.includes('new grad')) score += 5;
+      if (title.includes('senior') || title.includes('lead')) score -= 10;
+    } else if (profile.experience_level === '1 prior internship') {
+      if (desc.includes('experience') || title.includes('intern')) score += 5;
+    } else if (profile.experience_level === '2+ internships') {
+      if (desc.includes('proven') || desc.includes('advanced') || opp.competitiveness === 'high') score += 5;
     }
   }
 
-  // 2. Deadline Proximity
+  // 3. College Tier Match
+  if (profile.college_tier) {
+    const isTopTier = profile.college_tier === 'IIT/IISc' || profile.college_tier === 'NIT/IIIT/BITS';
+    if (isTopTier && opp.competitiveness === 'high') score += 5;
+  }
+
+  // 4. Focus Area
+  if (profile.focus_area) {
+    const focusAreas = profile.focus_area.split(',');
+    for (const focus of focusAreas) {
+      if (opp.type.toLowerCase().includes(focus.trim().toLowerCase().replace('looking for ', '').replace('roles', ''))) {
+        score += 15;
+        break;
+      }
+    }
+  }
+
+  // 5. Deadline Proximity
   if (opp.deadline) {
     const daysLeft = (new Date(opp.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-    if (daysLeft >= 0 && daysLeft <= 7) score += 15;
-    else if (daysLeft > 7 && daysLeft <= 30) score += 5;
+    if (daysLeft >= 0 && daysLeft <= 7) score += 10;
+    else if (daysLeft > 7 && daysLeft <= 30) score += 3;
   }
-
-  // 3. Effort Level
-  if (opp.effort_level?.toLowerCase() === 'low') score += 10;
-  if (opp.effort_level?.toLowerCase() === 'medium') score += 5;
 
   return score;
 }
 
+function isEligible(opp: any, profile: any) {
+  if (!profile || !profile.current_year) return true;
+  
+  // If the opportunity has strict eligibility years
+  if (opp.eligibility && Array.isArray(opp.eligibility.year)) {
+    const userYearNum = parseCurrentYear(profile.current_year);
+    if (userYearNum !== null && opp.eligibility.year.length > 0) {
+      if (!opp.eligibility.year.includes(userYearNum)) {
+        return false; // Hard gate: user year is strictly not allowed
+      }
+    }
+  }
+  return true;
+}
+
 export default async function DashboardPage() {
+  const pageSize = 50;
   const supabase = await createClient();
   
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (authError || !user) {
     redirect("/login");
   }
 
-  const userId = session.user.id;
+  const userId = user.id;
   const profile = await getUserProfile();
 
-  // Fetch up to 300 active opportunities to rank in memory
-  const { data: opportunities, error: oppsError } = await supabase
-    .from('opportunities')
-    .select('*')
-    .eq('is_active', true)
-    .order('deadline', { ascending: true, nullsFirst: false })
-    .limit(300);
+  const isProfileComplete = profile && 
+    profile.college_tier && 
+    profile.current_year && 
+    profile.tech_stack && profile.tech_stack.length > 0 && 
+    profile.focus_area && 
+    profile.location_preference;
+
+  if (!isProfileComplete) {
+    redirect("/onboarding");
+  }
+
+  // NOTE: Deep-linking to specific scroll positions or pages via URL params 
+  // is intentionally disabled for this TikTok-style vertical feed architecture. 
+  // The server always renders Page 1 on initial load for optimal FCP.
+  const start = 0;
+  const end = pageSize - 1;
+
+  let pagedOpportunities: any[] = [];
+  let totalPages = 1;
+
+  const { data, error: oppsError, count } = await supabase
+    .rpc('get_ranked_opportunities', { p_user_id: userId }, { count: 'exact' })
+    .range(start, end);
 
   if (oppsError) {
-    console.error("Error fetching opportunities:", oppsError);
+    console.error("Error fetching ranked opportunities via RPC:", oppsError);
+    // Suppress crash on PGRST202 (missing function) so UI can render Empty State
+  } else {
+    pagedOpportunities = data || [];
+    totalPages = count ? Math.ceil(count / pageSize) : 1;
   }
-
-  // Apply ranking algorithm
-  let rankedOpportunities = opportunities || [];
-  if (profile) {
-    rankedOpportunities = rankedOpportunities.sort((a, b) => calculateScore(b, profile) - calculateScore(a, profile));
-  }
-  
-  // Return top 50 to avoid overwhelming the client
-  const topOpportunities = rankedOpportunities.slice(0, 50);
 
   let savedStatuses: any[] = [];
 
@@ -83,10 +144,11 @@ export default async function DashboardPage() {
   
   return (
     <Feed 
-      opportunities={topOpportunities} 
+      initialOpportunities={pagedOpportunities || []} 
       savedStatuses={savedStatuses} 
-      user={session.user}
+      user={user}
       profile={profile}
+      initialTotalPages={totalPages}
     />
   );
 }

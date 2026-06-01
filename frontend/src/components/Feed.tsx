@@ -1,12 +1,12 @@
 "use client";
 
 import { 
-  Home, Compass, Bookmark, Flame, User, Share2, Star, 
-  ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Trophy, Rocket
+  Compass, Bookmark, Flame, User, Share2, Star, 
+  ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Trophy, Rocket, Filter, Sparkles, CheckCircle2, LogOut
 } from "lucide-react";
-import { useState, useRef, useTransition, useOptimistic, useCallback } from "react";
-import { toggleBookmark, updateApplicationStatus } from "@/app/actions";
-import ProfileDashboard from "./ProfileDashboard";
+import { useState, useRef, useTransition, useOptimistic, useCallback, useEffect } from "react";
+import { toggleBookmark, updateApplicationStatus, signOut } from "@/app/actions";
+import Link from "next/link";
 
 type Opportunity = {
   id: string;
@@ -26,38 +26,51 @@ type UserSavedStatus = {
 };
 
 export default function Feed({ 
-  opportunities, 
+  initialOpportunities, 
   savedStatuses,
   user,
-  profile
+  profile,
+  initialTotalPages
 }: { 
-  opportunities: Opportunity[], 
+  initialOpportunities: Opportunity[], 
   savedStatuses: UserSavedStatus[],
   user?: any,
-  profile?: any
+  profile?: any,
+  initialTotalPages?: number
 }) {
-  // Initialize to home (onboarding) if profile is incomplete
-  const isProfileComplete = profile && profile.focus_area && profile.tech_stack && profile.tech_stack.length > 0;
-  const [activeTab, setActiveTab] = useState(isProfileComplete ? "discover" : "home");
-  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(["All"]));
-  const [filterKey, setFilterKey] = useState(0); // triggers re-animation on filter change
-  const [isPending, startTransition] = useTransition();
 
-  // Optimistic saved map — updates instantly on click, syncs with server in bg
+  const [allOpps, setAllOpps] = useState<Opportunity[]>(initialOpportunities);
+  const [page, setPage] = useState(1);
+  const [isFetching, setIsFetching] = useState(false);
+  const [hasMore, setHasMore] = useState(initialTotalPages ? initialTotalPages > 1 : true);
+  
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const snapContainerRef = useRef<HTMLDivElement>(null);
+  const isFirstMount = useRef(true);
+
+  const [activeTab, setActiveTab] = useState("discover");
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(["All"]));
+  const [filterKey, setFilterKey] = useState(0); 
+  const [isPending, startTransition] = useTransition();
+  const [actionError, setActionError] = useState<string | null>(null);
+
   const [optimisticSaved, updateOptimisticSaved] = useOptimistic(
     new Map(savedStatuses.map(s => [s.opportunity_id, s.status])),
-    (currentMap, { id, action }: { id: string; action: "add" | "remove" }) => {
+    (currentMap, { id, action }: { id: string; action: string }) => {
       const newMap = new Map(currentMap);
       if (action === "add") {
         newMap.set(id, "to_apply");
-      } else {
+      } else if (action === "remove") {
         newMap.delete(id);
+      } else {
+        // If action is a specific status like 'applied' or 'rejected'
+        newMap.set(id, action);
       }
       return newMap;
     }
   );
 
-  // Reference for the snap container to programmatically scroll
   const feedRef = useRef<HTMLDivElement>(null);
 
   const scrollByCard = (direction: 'up' | 'down') => {
@@ -80,28 +93,37 @@ export default function Feed({
   };
 
   const handleBookmark = (id: string, currentStatus: string | undefined) => {
+    setActionError(null);
     const action = currentStatus && currentStatus !== 'archived' ? "remove" : "add";
     startTransition(async () => {
       updateOptimisticSaved({ id, action });
-      await toggleBookmark(id, currentStatus || null);
+      try {
+        const res = await toggleBookmark(id, currentStatus || null);
+        if (res?.error) setActionError(res.error);
+      } catch (err: any) {
+        setActionError(err.message || "Failed to save opportunity");
+      }
     });
   };
 
   const handleStatusChange = (id: string, newStatus: string) => {
+    setActionError(null);
     startTransition(async () => {
-      const newMap = new Map(optimisticSaved);
-      newMap.set(id, newStatus);
-      // We don't have a direct useOptimistic update for just status value change easily if it doesn't support it, 
-      // but we can trigger server action which will revalidate.
-      await updateApplicationStatus(id, newStatus);
+      // Use the optimistic updater function so the UI updates instantly
+      updateOptimisticSaved({ id, action: newStatus as any });
+      try {
+        const res = await updateApplicationStatus(id, newStatus);
+        if (res?.error) setActionError(res.error);
+      } catch (err: any) {
+        setActionError(err.message || "Failed to update status");
+      }
     });
   };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Filter active opps (non-expired)
-  const activeOpps = opportunities.filter(op => {
+  const activeOpps = allOpps.filter(op => {
     if (activeTab === "saved") return optimisticSaved.has(op.id);
     if (op.deadline) {
       const d = new Date(op.deadline);
@@ -111,7 +133,6 @@ export default function Feed({
     return true;
   });
 
-  // Filter definition — each has a label, icon, and matcher
   const FILTER_DEFS = [
     { id: "All",            label: "All",          icon: <Rocket size={13} />,  match: (_: Opportunity) => true },
     { id: "Hackathons",     label: "Hackathons",   icon: <Zap size={13} />,     match: (op: Opportunity) => op.type.toLowerCase() === "hackathon" },
@@ -126,12 +147,9 @@ export default function Feed({
     { id: "High Stakes",    label: "High Stakes",  icon: <Flame size={13} />,   match: (op: Opportunity) => op.competitiveness?.toLowerCase() === "high" },
   ];
 
-  // Apply filter — OR logic across all selected filters, 100% client-side
   const fullyFilteredOpps = activeTab === "discover"
     ? (() => {
-        // If "All" is selected or no filters, show everything
         if (activeFilters.has("All") || activeFilters.size === 0) return activeOpps;
-        // OR across selected filters
         const selectedDefs = FILTER_DEFS.filter(f => activeFilters.has(f.id) && f.id !== "All");
         return activeOpps.filter(op => selectedDefs.some(f => f.match(op)));
       })()
@@ -141,46 +159,129 @@ export default function Feed({
     setActiveFilters(prev => {
       const next = new Set(prev);
       if (filterId === "All") {
-        // "All" clears everything and resets to All
         return new Set(["All"]);
       }
-      // Toggle this filter
       if (next.has(filterId)) {
         next.delete(filterId);
-        // If nothing left selected, fall back to All
         if (next.size === 0 || (next.size === 1 && next.has("All"))) return new Set(["All"]);
       } else {
-        next.delete("All"); // deselect All when picking specific
+        next.delete("All");
         next.add(filterId);
       }
       return next;
     });
     setFilterKey(k => k + 1);
-    feedRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, []);
+
+  // Reset feed when filters change
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortCtrl = new AbortController();
+    abortControllerRef.current = abortCtrl;
+
+    setAllOpps([]);
+    setPage(1);
+    setHasMore(true);
+    setIsFetching(true);
+
+    const filterArray = Array.from(activeFilters).filter(f => f !== "All");
+    const filterParam = filterArray.length > 0 ? filterArray.join(",") : "All";
+
+    fetch(`/api/opportunities?page=1&filters=${encodeURIComponent(filterParam)}`, {
+      signal: abortCtrl.signal
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.opportunities) {
+        setAllOpps(data.opportunities);
+        setHasMore(data.opportunities.length === 50);
+      }
+    })
+    .catch(err => {
+      if (err.name !== 'AbortError') console.error(err);
+    })
+    .finally(() => {
+      setIsFetching(false);
+    });
+
+    return () => abortCtrl.abort();
+  }, [activeFilters]);
+
+  // Infinite Scroll Trigger
+  const triggerRef = useCallback((node: HTMLDivElement | null) => {
+    if (isFetching || !hasMore) return;
+    
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        setIsFetching(true);
+        
+        const filterArray = Array.from(activeFilters).filter(f => f !== "All");
+        const filterParam = filterArray.length > 0 ? filterArray.join(",") : "All";
+        
+        const abortCtrl = new AbortController();
+        abortControllerRef.current = abortCtrl;
+        
+        fetch(`/api/opportunities?page=${nextPage}&filters=${encodeURIComponent(filterParam)}`, {
+          signal: abortCtrl.signal
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.opportunities && data.opportunities.length > 0) {
+            setAllOpps(prev => {
+              const existingIds = new Set(prev.map(p => p.id));
+              const newUniques = data.opportunities.filter((op: any) => !existingIds.has(op.id));
+              
+              if (newUniques.length > 0 && snapContainerRef.current) {
+                snapContainerRef.current.style.scrollSnapType = 'none';
+                setTimeout(() => {
+                  if (snapContainerRef.current) {
+                    snapContainerRef.current.style.scrollSnapType = 'y mandatory';
+                  }
+                }, 0);
+              }
+              
+              return [...prev, ...newUniques];
+            });
+            setHasMore(data.opportunities.length === 50);
+          } else {
+            setHasMore(false);
+          }
+        })
+        .catch(err => {
+          if (err.name !== 'AbortError') console.error(err);
+        })
+        .finally(() => {
+          setIsFetching(false);
+        });
+      }
+    });
+    
+    if (node) observerRef.current.observe(node);
+  }, [isFetching, hasMore, page, activeFilters]);
 
   const getEmptyStateMessage = () => {
     if (activeTab === "saved") return "You haven't bookmarked any opportunities yet.";
     if (!activeFilters.has("All") && activeFilters.size > 0) {
       return `No results for: ${[...activeFilters].join(" + ")}. Try adjusting your filters!`;
     }
-    return "No active opportunities found. Check back soon!";
+    return "No opportunities match your current profile preferences. Try broadening your tech stack or wait for new ones!";
   };
-
-
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
       
-      {/* NARROW LEFT SIDEBAR */}
       <nav className="w-24 border-r border-surface-low/30 bg-surface-lowest flex flex-col items-center py-8 gap-8 z-50 shrink-0">
-        <button 
-          onClick={() => setActiveTab('home')}
-          className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 w-full ${activeTab === 'home' ? 'bg-surface-high text-primary border-r-2 border-primary' : 'text-text-muted hover:text-text-main hover:bg-surface-low'}`}
-        >
-          <Home size={28} />
-          <span className="text-[10px] font-bold tracking-wider">HOME</span>
-        </button>
         <button 
           onClick={() => setActiveTab('discover')}
           className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 w-full ${activeTab === 'discover' ? 'bg-surface-high text-primary border-r-2 border-primary' : 'text-text-muted hover:text-text-main hover:bg-surface-low'}`}
@@ -195,14 +296,24 @@ export default function Feed({
           <Bookmark size={28} />
           <span className="text-[10px] font-bold tracking-wider">SAVED</span>
         </button>
+
+        <div className="mt-auto mb-4 w-full px-2">
+          <form action={signOut}>
+            <button 
+              type="submit"
+              className="flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 w-full text-text-muted hover:text-red-400 hover:bg-red-500/10"
+              title="Log Out"
+            >
+              <LogOut size={24} />
+              <span className="text-[10px] font-bold tracking-wider">EXIT</span>
+            </button>
+          </form>
+        </div>
       </nav>
 
-      {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         
-        {/* TOP NAVBAR */}
         <header className="h-20 flex items-center justify-between px-8 absolute top-0 left-0 right-0 z-50 pointer-events-none">
-          {/* Logo */}
           <div className="flex items-center gap-3 pointer-events-auto">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.2)]">
               <span className="text-background font-black text-xl tracking-tighter">O</span>
@@ -212,7 +323,13 @@ export default function Feed({
             </h1>
           </div>
           
-          {/* Right Actions */}
+          {actionError && (
+             <div className="absolute left-1/2 -translate-x-1/2 top-6 bg-error text-background px-4 py-2 rounded-full font-bold text-xs pointer-events-auto shadow-2xl animate-in fade-in slide-in-from-top-4">
+               {actionError}
+               <button onClick={() => setActionError(null)} className="ml-2 bg-background/20 px-2 py-0.5 rounded-full hover:bg-background/40">✕</button>
+             </div>
+          )}
+
           <div className="flex items-center gap-6 pointer-events-auto">
             <div className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 border border-surface-low/50">
               <Flame size={20} className="text-warning fill-warning" />
@@ -226,16 +343,9 @@ export default function Feed({
           </div>
         </header>
 
-        {activeTab === 'home' ? (
-          /* PROFILE DASHBOARD (HOME TAB) */
-          <ProfileDashboard profile={profile} user={user} savedCount={savedStatuses.length} onSaveComplete={() => setActiveTab('discover')} />
-        ) : (
-          /* VERTICAL FEED (DISCOVER / SAVED TABS) */
-          <>
-            {/* HORIZONTAL FILTER CHIPS (Only show on Discover tab) */}
+        <>
             {activeTab === 'discover' && (
               <div className="absolute top-20 left-0 right-0 z-40 px-4 py-4 flex gap-2 overflow-x-auto pointer-events-auto hide-scrollbar items-center">
-                {/* Clear all badge - only visible when multiple filters active */}
                 {!activeFilters.has("All") && activeFilters.size > 0 && (
                   <button
                     onClick={() => handleFilterChange("All")}
@@ -271,7 +381,10 @@ export default function Feed({
             {/* SHORTS-STYLE VERTICAL FEED */}
             <div 
               key={filterKey}
-              ref={feedRef}
+              ref={(node) => {
+                feedRef.current = node;
+                snapContainerRef.current = node;
+              }}
               className="snap-y-container flex-1 pt-0 pb-[10vh] relative animate-fadeIn"
               style={{ animationDuration: '200ms' }}
             >
@@ -282,7 +395,7 @@ export default function Feed({
                  </div>
               )}
 
-              {fullyFilteredOpps.map((card) => {
+              {fullyFilteredOpps.map((card, index) => {
                 const status = optimisticSaved.get(card.id);
                 const isBookmarked = !!status;
 
@@ -294,7 +407,8 @@ export default function Feed({
 
                 return (
                 <section 
-                  key={card.id} 
+                  key={card.id}
+                  ref={index === fullyFilteredOpps.length - 5 ? triggerRef : undefined}
                   className="snap-item w-full h-[95vh] flex items-center justify-center pt-20 pb-10 relative"
                 >
                   {/* THE CARD */}
@@ -415,6 +529,15 @@ export default function Feed({
 
                 </section>
               )})}
+
+              {/* SKELETON PLACEHOLDERS WHILE FETCHING */}
+              {isFetching && (
+                <>
+                  <OpportunitySkeleton />
+                  <OpportunitySkeleton />
+                  <OpportunitySkeleton />
+                </>
+              )}
             </div>
 
             {/* UP/DOWN NAVIGATION ARROWS */}
@@ -432,11 +555,34 @@ export default function Feed({
                 <ChevronDown size={24} />
               </button>
             </div>
+            
           </>
-        )}
-
       </main>
     </div>
+  );
+}
+
+function OpportunitySkeleton() {
+  return (
+    <section className="snap-item w-full h-[95vh] flex items-center justify-center pt-20 pb-10 relative">
+      <div className="w-full max-w-[420px] h-full max-h-[750px] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse">
+        <div className="absolute top-6 left-6 right-6 flex flex-col gap-2">
+          <div className="w-24 h-6 bg-surface-high rounded-full"></div>
+          <div className="w-32 h-4 bg-surface-high rounded-full mt-1"></div>
+        </div>
+        <div className="absolute top-6 right-6 w-16 h-16 rounded-full bg-surface-high"></div>
+        <div className="absolute bottom-[90px] left-0 right-0 p-8 pb-4 flex flex-col items-center">
+          <div className="w-16 h-16 rounded-full bg-surface-high mb-6"></div>
+          <div className="w-3/4 h-8 bg-surface-high rounded-md mb-4"></div>
+          <div className="w-full h-4 bg-surface-high rounded-sm mb-2"></div>
+          <div className="w-5/6 h-4 bg-surface-high rounded-sm mb-4"></div>
+          <div className="flex gap-2"><div className="w-16 h-6 bg-surface-high rounded-full"></div><div className="w-20 h-6 bg-surface-high rounded-full"></div></div>
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 p-6 pt-12 bg-surface-lowest/90 z-20 flex flex-col">
+          <div className="w-full h-14 rounded-xl bg-surface-high"></div>
+        </div>
+      </div>
+    </section>
   );
 }
 

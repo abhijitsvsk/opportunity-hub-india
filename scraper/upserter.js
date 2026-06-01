@@ -1,5 +1,15 @@
 const { createClient } = require('@supabase/supabase-js');
 
+function normalizeString(str) {
+  if (!str) return '';
+  return str.toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .replace(/\b(inc|llc|ltd|corp)\b/g, '')
+    .replace(/\b(2025|2026|2027)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /**
  * Upserts structured data into Supabase
  */
@@ -38,6 +48,10 @@ async function upsertData(records, supabaseKey) {
     }
 
     try {
+      const normalizedTitle = normalizeString(record.title);
+      const company = record.company || record.organization || record.organisation || '';
+      const normalizedCompany = company ? normalizeString(company) : '__no_company_fallback__';
+
       const { data, error } = await supabase
         .from('opportunities')
         .upsert({
@@ -51,9 +65,11 @@ async function upsertData(records, supabaseKey) {
           eligibility: record.eligibility || { 'type': 'all' },
           effort_level: record.effort_level || 'medium',
           competitiveness: record.competitiveness || 'medium',
-          is_active: true
+          is_active: true,
+          normalized_title: normalizedTitle,
+          normalized_company: normalizedCompany
         }, {
-          onConflict: 'source_url'
+          onConflict: 'normalized_title, normalized_company'
         });
 
       if (error) {

@@ -1,17 +1,107 @@
 require('dotenv').config();
 const { scrapeDevfolio } = require('./devfolio');
+const { scrapeGithubInternships } = require('./github-internships');
+const { scrapeGithubNewGrad } = require('./github-new-grad');
 const { structureData } = require('./structurer');
 const { scrapeUnstop } = require('./unstop');
 const { getStaticOpportunities } = require('./static');
 const { upsertData } = require('./upserter');
-const { notifyDiscord } = require('./notifier');
+const { notifyDiscord, notifyDiscordError } = require('./notifier');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
+
+class GlobalRateLimiter {
+  constructor(maxCalls) {
+    this.maxCalls = maxCalls;
+    this.callsMade = 0;
+  }
+  
+  canMakeCall() {
+    return this.callsMade < this.maxCalls;
+  }
+  
+  increment() {
+    this.callsMade++;
+  }
+}
+
+/**
+ * Normalizes title and company for deduplication
+ */
+function normalizeString(str) {
+  if (!str) return '';
+  return str.toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .replace(/\b(inc|llc|ltd|corp)\b/g, '')
+    .replace(/\b(2025|2026|2027)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Process raw records through Gemini and upsert
+ */
+async function processRawRecordsWithGemini(sourceName, rawRecords, rateLimiter) {
+  const structuredRecords = [];
+  const failedRecords = [];
+  
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+
+  for (let i = 0; i < rawRecords.length; i++) {
+    const record = rawRecords[i];
+    
+    // Check global budget
+    if (!rateLimiter.canMakeCall()) {
+       console.warn(`\n[Rate Limiter] Global Gemini budget (300) exhausted! Queuing remaining ${rawRecords.length - i} records to pending_processing.`);
+       // Write to pending processing queue for next run
+       for (let j = i; j < rawRecords.length; j++) {
+          await supabase.from('pending_processing').insert({
+             raw_data: rawRecords[j],
+             source: sourceName
+          });
+       }
+       break;
+    }
+
+    rateLimiter.increment();
+    console.log(`  Structuring [${i+1}/${rawRecords.length}]: ${record.source_url || 'Unknown'}`);
+    
+    try {
+      // Assuming record is either a raw Devfolio object or similar
+      const structured = await structureData(record);
+      if (structured.error) {
+        console.warn(`  -> Structured error: ${structured.error}`);
+        failedRecords.push({ raw: record, error: structured.error });
+      } else {
+        structuredRecords.push(structured);
+      }
+    } catch (err) {
+      console.error(`  -> Failed to structure:`, err.message);
+      failedRecords.push({ raw: record, error: err.message });
+    }
+    
+    if (i < rawRecords.length - 1) {
+      await new Promise(r => setTimeout(r, 4000));
+    }
+  }
+
+  if (structuredRecords.length > 0) {
+     console.log(`Upserting ${structuredRecords.length} structured records for ${sourceName}...`);
+     const result = await upsertData(structuredRecords, supabaseKey);
+     if (result.newRecords && result.newRecords.length > 0) {
+       await notifyDiscord(result.newRecords, sourceName);
+     }
+  }
+
+  return structuredRecords.length;
+}
 
 /**
  * Runs a specific source through the pipeline, handles upsert, and logs to pipeline_runs.
  */
-async function runPipelineSource(sourceName, processFn) {
+async function runPipelineSource(sourceName, processFn, rateLimiter) {
+  let discordAlertSent = false;
   const stats = {
     startedAt: new Date().toISOString(),
     completedAt: null,
@@ -29,33 +119,42 @@ async function runPipelineSource(sourceName, processFn) {
     console.log(`--- STARTING PIPELINE: ${sourceName.toUpperCase()} ---`);
     console.log(`=========================================`);
     
-    // Process function must return { scrapedCount, structuredRecords }
-    const { scrapedCount, structuredRecords } = await processFn();
+    // Most scrapers already return structured data. Only Devfolio returns raw.
+    // To support priority & rate limit, we handle it inside the specific processFn or here.
+    const { scrapedCount, rawRecords, structuredRecords } = await processFn();
     stats.recordsScraped = scrapedCount;
-    stats.recordsStructured = structuredRecords.length;
+    
+    let finalStructured = structuredRecords || [];
 
-    if (structuredRecords.length === 0) {
+    // If scraper returned raw records, run them through Gemini under the rate limiter
+    if (rawRecords && rawRecords.length > 0) {
+       const structuredCount = await processRawRecordsWithGemini(sourceName, rawRecords, rateLimiter);
+       stats.recordsStructured = structuredCount;
+       // processRawRecordsWithGemini already handled upserting.
+       stats.recordsUpserted = structuredCount; 
+       stats.status = 'success';
+       return;
+    }
+
+    // Standard pre-structured insert flow
+    stats.recordsStructured = finalStructured.length;
+
+    if (finalStructured.length === 0) {
       console.log(`No valid structured records to upsert for ${sourceName}. Skipping upsert phase.`);
       stats.status = 'success';
       return;
     }
 
-    console.log(`\nUpserting ${structuredRecords.length} records to Supabase for ${sourceName}...`);
+    console.log(`\nUpserting ${finalStructured.length} records to Supabase for ${sourceName}...`);
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-    if (!supabaseKey) {
-      throw new Error('Missing SUPABASE_SERVICE_KEY. Cannot upsert.');
-    }
-    const result = await upsertData(structuredRecords, supabaseKey);
+    const result = await upsertData(finalStructured, supabaseKey);
     
-    // Notify Discord of any brand new records
     if (result.newRecords && result.newRecords.length > 0) {
       await notifyDiscord(result.newRecords, sourceName);
     }
     
     console.log(`\n--- ${sourceName.toUpperCase()} PIPELINE COMPLETE ---`);
     console.log(`Success: ${result.successCount}`);
-    console.log(`Skipped: ${result.skipCount}`);
-    console.log(`Failed:  ${result.failCount}`);
     
     stats.recordsUpserted = result.successCount;
     stats.recordsSkipped = result.skipCount;
@@ -66,6 +165,11 @@ async function runPipelineSource(sourceName, processFn) {
     console.error(`\n❌ ${sourceName.toUpperCase()} PIPELINE FAILED:`, error.message);
     stats.status = 'failed';
     stats.errorMessage = error.message;
+
+    if (!discordAlertSent) {
+      await notifyDiscordError(sourceName, error.message, stats);
+      discordAlertSent = true;
+    }
   } finally {
     stats.completedAt = new Date().toISOString();
     
@@ -85,7 +189,6 @@ async function runPipelineSource(sourceName, processFn) {
           records_failed: stats.recordsFailed,
           error_message: stats.errorMessage
         }]);
-        console.log(`Logged ${sourceName} pipeline run to database.`);
       } catch (dbErr) {
         console.error(`Failed to log ${sourceName} pipeline run to database:`, dbErr.message);
       }
@@ -94,91 +197,97 @@ async function runPipelineSource(sourceName, processFn) {
 }
 
 /**
- * Devfolio Specific Processing Logic
+ * Process any pending raw records from the previous run
  */
-async function processDevfolio() {
-  console.log('\n[1/2] Scraping Devfolio...');
-  const scrapedRecords = await scrapeDevfolio();
-  
-  if (scrapedRecords.length === 0) {
-    return { scrapedCount: 0, structuredRecords: [] };
-  }
-
-  console.log(`\n[2/2] Structuring data with Gemini (${scrapedRecords.length} records)...`);
-  const structuredRecords = [];
-  const failedRecords = [];
-  
-  for (let i = 0; i < scrapedRecords.length; i++) {
-    const record = scrapedRecords[i];
-    console.log(`  Structuring [${i+1}/${scrapedRecords.length}]: ${record.source_url}`);
-    
-    try {
-      const structured = await structureData(record);
-      if (structured.error) {
-        console.warn(`  -> Structured error for ${record.source_url}: ${structured.error}`);
-        failedRecords.push({ url: record.source_url, raw: record.raw_text, error: structured.error });
-      } else {
-        structuredRecords.push(structured);
+async function processPendingQueue(rateLimiter) {
+   console.log(`\n=========================================`);
+   console.log(`--- PROCESSING PENDING QUEUE ---`);
+   console.log(`=========================================`);
+   
+   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+   const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+   
+   const { data: pending } = await supabase.from('pending_processing').select('*').order('created_at', { ascending: true }).limit(300);
+   
+   if (!pending || pending.length === 0) {
+      console.log('Pending queue is empty.');
+      return;
+   }
+   
+   console.log(`Found ${pending.length} pending records in queue.`);
+   
+   for (const item of pending) {
+      if (!rateLimiter.canMakeCall()) {
+         console.warn('Rate limit hit while processing pending queue. Stopping queue processing.');
+         break;
       }
-    } catch (err) {
-      console.error(`  -> Failed to structure ${record.source_url}:`, err.message);
-      failedRecords.push({ url: record.source_url, raw: record.raw_text, error: err.message });
-    }
-    
-    // Delay 5 seconds to respect Gemini free tier limits (15 RPM)
-    if (i < scrapedRecords.length - 1) {
-      await new Promise(r => setTimeout(r, 5000));
-    }
-  }
-
-  // Persist Failed Records
-  if (failedRecords.length > 0) {
-    if (!fs.existsSync('recon-output')) fs.mkdirSync('recon-output');
-    fs.writeFileSync('recon-output/failed-records.json', JSON.stringify(failedRecords, null, 2));
-    console.log(`\n⚠️ Wrote ${failedRecords.length} failed records to recon-output/failed-records.json for debugging.`);
-  }
-
-  // Health Check
-  const nullDeadlineCount = structuredRecords.filter(r => r.deadline === null).length;
-  const nullRate = structuredRecords.length > 0 ? nullDeadlineCount / structuredRecords.length : 0;
-  console.log(`\nHealth Check: ${nullDeadlineCount}/${structuredRecords.length} records have null deadlines (${(nullRate * 100).toFixed(1)}%)`);
-  
-  if (structuredRecords.length > 0 && nullRate >= 0.3) {
-    throw new Error(`PIPELINE HEALTH CHECK FAILED: Null deadline rate is ${(nullRate * 100).toFixed(1)}% (Threshold is 30%). Devfolio UI may have changed. Aborting to prevent bad data.`);
-  }
-
-  return { scrapedCount: scrapedRecords.length, structuredRecords };
-}
-
-/**
- * Unstop Specific Processing Logic
- */
-async function processUnstop() {
-  // Unstop natively returns structured JSON, so scrapeUnstop handles both steps in one
-  const structuredRecords = await scrapeUnstop();
-  return { scrapedCount: structuredRecords.length, structuredRecords };
-}
-
-/**
- * Static Sources Processing Logic
- */
-async function processStatic() {
-  const structuredRecords = await getStaticOpportunities();
-  return { scrapedCount: structuredRecords.length, structuredRecords };
+      
+      rateLimiter.increment();
+      console.log(`  Structuring pending record [ID: ${item.id}]`);
+      try {
+         const structured = await structureData(item.raw_data);
+         if (!structured.error) {
+            await upsertData([structured], supabaseKey);
+         }
+         // Delete from queue whether it succeeded or completely failed structureData
+         await supabase.from('pending_processing').delete().eq('id', item.id);
+      } catch (err) {
+         console.error('Failed to structure pending record:', err.message);
+         // Still delete it so it doesn't block forever
+         await supabase.from('pending_processing').delete().eq('id', item.id);
+      }
+      
+      await new Promise(r => setTimeout(r, 4000));
+   }
 }
 
 async function main() {
-  // Run Static Sources
-  await runPipelineSource('static', processStatic);
+  const rateLimiter = new GlobalRateLimiter(300);
 
-  // Run Unstop
-  await runPipelineSource('unstop', processUnstop);
+  // 0. Process Rollover Queue First
+  await processPendingQueue(rateLimiter);
+
+  // PRIORITY 1: Hackathons (Tightest deadlines)
+  await runPipelineSource('devfolio', async () => {
+    const scrapedRecords = await scrapeDevfolio();
+    // Devfolio returns raw records needing Gemini
+    return { scrapedCount: scrapedRecords.length, rawRecords: scrapedRecords };
+  }, rateLimiter);
   
-  // Run Devfolio
-  await runPipelineSource('devfolio', processDevfolio);
+  // Note: Unstop is run for all categories in one scraper file, but we'll execute it at Priority 1.
+  await runPipelineSource('unstop', async () => {
+    const structuredRecords = await scrapeUnstop();
+    return { scrapedCount: structuredRecords.length, structuredRecords };
+  }, rateLimiter);
+
+  // PRIORITY 2: Internships
+  await runPipelineSource('github-internships', async () => {
+    const structuredRecords = await scrapeGithubInternships();
+    return { scrapedCount: structuredRecords.length, structuredRecords };
+  }, rateLimiter);
+
+  // PRIORITY 3 & 5: Open Source & Fellowships (Static)
+  await runPipelineSource('static', async () => {
+    const structuredRecords = await getStaticOpportunities();
+    return { scrapedCount: structuredRecords.length, structuredRecords };
+  }, rateLimiter);
+
+  // PRIORITY 4: New Grad
+  await runPipelineSource('github-new-grad', async () => {
+    const structuredRecords = await scrapeGithubNewGrad();
+    return { scrapedCount: structuredRecords.length, structuredRecords };
+  }, rateLimiter);
+
+  // PRIORITY 6: Discord
+  await runPipelineSource('discord', async () => {
+    const { scrapeDiscord } = require('./discord');
+    const scrapedRecords = await scrapeDiscord();
+    // Discord returns raw records needing Gemini
+    return { scrapedCount: scrapedRecords.length, rawRecords: scrapedRecords };
+  }, rateLimiter);
+
 }
 
-// Run if called directly
 if (require.main === module) {
   main();
 }

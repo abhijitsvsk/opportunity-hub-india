@@ -1,27 +1,53 @@
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Compass, Zap, Target, Brain, ArrowRight } from "lucide-react";
+import { Compass, Zap, Target, Brain, ArrowRight, Briefcase, Code as CodeIcon, Flame } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "OpportunityHub | Find Your Next Tech Role",
-  description: "Stop missing out on hackathons, internships, and open source gigs. We aggregate, structure, and match the best opportunities to your profile.",
+  title: "Opportunity Hub — Internships, Hackathons and Fellowships for CS Students",
+  description: "Stop missing deadlines. Discover and track the best tech internships, hackathons, and open-source programs ranked for your profile.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://opportunityhub.com'),
   openGraph: {
-    title: "OpportunityHub",
-    description: "The kinetic engine for your tech career.",
+    title: "Opportunity Hub — Internships, Hackathons and Fellowships for CS Students",
+    description: "Stop missing deadlines. Discover and track the best tech internships, hackathons, and open-source programs ranked for your profile.",
     type: "website",
+    images: ["/og-image.png"],
   }
 };
 
-export default async function LandingPage() {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  // If user is already logged in, take them to the dashboard directly
-  if (session) {
-    redirect("/dashboard");
-  }
+export default function LandingPage() {
+  // Hardcoded static mockups for SEO indexability and preview
+  const MOCK_OPPORTUNITIES = [
+    {
+      id: "mock1",
+      title: "Software Engineering Internship — Major Tech Company",
+      company: "Major Tech Company",
+      type: "internship",
+      deadline: "2026-08-01",
+      tags: ["C++", "Java", "C#"],
+      effort: "high",
+      icon: <Briefcase className="text-primary" size={24} />
+    },
+    {
+      id: "mock2",
+      title: "Global Blockchain Hackathon",
+      company: "Web3 Foundation",
+      type: "hackathon",
+      deadline: "2026-06-15",
+      tags: ["Web3", "Solidity", "React"],
+      effort: "medium",
+      icon: <CodeIcon className="text-primary" size={24} />
+    },
+    {
+      id: "mock3",
+      title: "Open Source Contribution Program",
+      company: "Open Source Initiative",
+      type: "open source",
+      deadline: "2026-04-02",
+      tags: ["Open Source", "Python", "JavaScript"],
+      effort: "high",
+      icon: <Globe className="text-primary" size={24} />
+    }
+  ];
 
   return (
     <div className="w-full h-full overflow-y-auto bg-background text-text-main flex flex-col relative selection:bg-primary/30">
@@ -68,6 +94,38 @@ export default async function LandingPage() {
         </Link>
       </main>
 
+      {/* Static Mockup / Preview Section */}
+      <section className="w-full max-w-5xl mx-auto px-8 py-10 z-10">
+        <h2 className="text-center text-sm font-bold tracking-widest text-text-muted uppercase mb-8">Recently Added Opportunities</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {MOCK_OPPORTUNITIES.map((opp) => (
+            <div key={opp.id} className="bg-surface-low/80 backdrop-blur-md border border-surface-high/50 p-6 rounded-2xl flex flex-col gap-4 shadow-xl hover:border-primary/50 transition-all group">
+              <div className="flex justify-between items-start">
+                <div className="w-12 h-12 rounded-xl bg-surface-high flex items-center justify-center">
+                  {opp.icon}
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest bg-primary/10 text-primary px-2 py-1 rounded-full border border-primary/20">
+                  {opp.type}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted font-bold uppercase">{opp.company}</p>
+                <h3 className="text-lg font-black leading-tight mt-1 group-hover:text-primary transition-colors">{opp.title}</h3>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {opp.tags.map(t => (
+                  <span key={t} className="text-xs bg-surface-high/50 text-text-muted px-2 py-1 rounded-md font-mono">{t}</span>
+                ))}
+              </div>
+              <div className="mt-auto pt-4 border-t border-surface-high/50 flex items-center justify-between text-xs font-mono text-text-muted">
+                <span className="flex items-center gap-1"><Flame size={12} className="text-warning" /> High Stakes</span>
+                <span>Closes: {opp.deadline}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features Grid */}
       <section className="w-full max-w-6xl mx-auto px-8 py-20 z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -77,7 +135,7 @@ export default async function LandingPage() {
               <Zap size={24} className="text-primary" />
             </div>
             <h3 className="text-xl font-bold">Real-time Aggregation</h3>
-            <p className="text-sm text-text-muted">We scrape Devfolio, Unstop, and more to bring you opportunities minutes after they go live.</p>
+            <p className="text-sm text-text-muted">We scrape Devfolio, Unstop, and GitHub to bring you opportunities minutes after they go live.</p>
           </div>
 
           <div className="bg-surface-low p-8 rounded-3xl border border-surface-high/50 shadow-xl flex flex-col items-start gap-4 hover:border-primary/50 transition-colors">
@@ -101,8 +159,19 @@ export default async function LandingPage() {
 
       {/* Footer */}
       <footer className="w-full py-8 text-center border-t border-surface-high/30 text-xs text-text-muted z-10">
-        &copy; {new Date().getFullYear()} OpportunityHub. The Kinetic Engine.
+        &copy; {new Date().getFullYear()} Opportunity Hub. The Kinetic Engine.
       </footer>
     </div>
+  );
+}
+
+// Icon helper function for mockups that avoids missing imports
+function Globe(props: any) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={props.className}>
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="2" y1="12" x2="22" y2="12"/>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
   );
 }
