@@ -151,7 +151,7 @@ export default function Feed({
     ? (() => {
         if (activeFilters.has("All") || activeFilters.size === 0) return activeOpps;
         const selectedDefs = FILTER_DEFS.filter(f => activeFilters.has(f.id) && f.id !== "All");
-        return activeOpps.filter(op => selectedDefs.some(f => f.match(op)));
+        return activeOpps.filter(op => selectedDefs.every(f => f.match(op)));
       })()
     : activeOpps;
 
@@ -313,8 +313,8 @@ export default function Feed({
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
         
-        <header className="h-20 flex items-center justify-between px-8 absolute top-0 left-0 right-0 z-50 pointer-events-none">
-          <div className="flex items-center gap-3 pointer-events-auto">
+        <header className="h-20 shrink-0 flex items-center justify-between px-8 relative z-50">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.2)]">
               <span className="text-background font-black text-xl tracking-tighter">O</span>
             </div>
@@ -345,7 +345,7 @@ export default function Feed({
 
         <>
             {activeTab === 'discover' && (
-              <div className="absolute top-20 left-0 right-0 z-40 px-4 py-4 flex gap-2 overflow-x-auto pointer-events-auto hide-scrollbar items-center">
+              <div className="shrink-0 relative z-40 px-4 py-4 flex gap-2 overflow-x-auto hide-scrollbar items-center bg-background/95 backdrop-blur-md border-b border-surface-low/30">
                 {!activeFilters.has("All") && activeFilters.size > 0 && (
                   <button
                     onClick={() => handleFilterChange("All")}
@@ -355,7 +355,11 @@ export default function Feed({
                   </button>
                 )}
                 {FILTER_DEFS.map(filter => {
-                  const count = activeOpps.filter(op => filter.match(op)).length;
+                  const count = activeOpps.filter(op => {
+                    if (!filter.match(op)) return false;
+                    const otherFilters = FILTER_DEFS.filter(f => activeFilters.has(f.id) && f.id !== "All" && f.id !== filter.id);
+                    return otherFilters.every(f => f.match(op));
+                  }).length;
                   const isActive = activeFilters.has(filter.id);
                   return (
                     <button
@@ -385,7 +389,7 @@ export default function Feed({
                 feedRef.current = node;
                 snapContainerRef.current = node;
               }}
-              className="snap-y-container flex-1 pt-0 pb-[10vh] relative animate-fadeIn"
+              className="snap-y-container flex-1 overflow-y-auto relative animate-fadeIn"
               style={{ animationDuration: '200ms' }}
             >
               {fullyFilteredOpps.length === 0 && (
@@ -409,7 +413,7 @@ export default function Feed({
                 <section 
                   key={card.id}
                   ref={index === fullyFilteredOpps.length - 5 ? triggerRef : undefined}
-                  className="snap-item w-full h-[95vh] flex items-center justify-center pt-20 pb-10 relative"
+                  className="snap-item w-full h-full flex items-center justify-center py-6 relative"
                 >
                   {/* THE CARD */}
                   <div className="w-full max-w-[420px] h-full max-h-[750px] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10">
