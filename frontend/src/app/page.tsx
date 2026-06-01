@@ -52,8 +52,10 @@ export default function LandingPage() {
   return (
     <div className="w-full h-full overflow-x-hidden overflow-y-auto bg-background text-text-main flex flex-col relative selection:bg-primary/30">
       {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[150px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-secondary/10 blur-[150px] rounded-full pointer-events-none"></div>
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[150px] rounded-full"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-secondary/10 blur-[150px] rounded-full"></div>
+      </div>
 
       {/* Navigation */}
       <nav className="w-full px-8 py-6 flex items-center justify-between z-10 border-b border-surface-high/30 sticky top-0 bg-background/80 backdrop-blur-md">

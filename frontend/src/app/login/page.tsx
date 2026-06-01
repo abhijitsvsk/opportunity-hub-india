@@ -40,7 +40,7 @@ export default async function LoginPage(
     <div className="bg-background text-text-main min-h-screen flex flex-col relative overflow-x-hidden overflow-y-auto font-sans p-4">
       
       {/* Atmospheric Background Effects */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-secondary/20 blur-[120px]"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-primary/10 blur-[150px]"></div>
       </div>
