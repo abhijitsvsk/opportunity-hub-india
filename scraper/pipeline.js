@@ -2,7 +2,7 @@ require('dotenv').config();
 const { scrapeDevfolio } = require('./devfolio');
 const { scrapeGithubInternships } = require('./github-internships');
 const { scrapeGithubNewGrad } = require('./github-new-grad');
-const { structureData } = require('./structurer');
+const { structureData, structureDataBatch } = require('./structurer');
 const { scrapeUnstop } = require('./unstop');
 const { getStaticOpportunities } = require('./static');
 const { upsertData } = require('./upserter');
@@ -48,16 +48,41 @@ async function processRawRecordsWithGemini(sourceName, rawRecords, rateLimiter) 
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
 
-  for (let i = 0; i < rawRecords.length; i++) {
-    const record = rawRecords[i];
+  // 1. DEDUPLICATION: Find URLs that already exist in Supabase
+  const urls = rawRecords.map(r => r.source_url).filter(Boolean);
+  const existingUrls = new Set();
+  
+  if (urls.length > 0) {
+    // Supabase .in() limits to 1000 items, but rawRecords is rarely that big.
+    const { data, error } = await supabase
+      .from('opportunities')
+      .select('source_url')
+      .in('source_url', urls);
+      
+    if (!error && data) {
+      data.forEach(row => existingUrls.add(row.source_url));
+    } else if (error) {
+      console.warn(`Failed to query existing URLs for deduplication: ${error.message}`);
+    }
+  }
+
+  const newRecords = rawRecords.filter(r => !existingUrls.has(r.source_url));
+  const skippedCount = rawRecords.length - newRecords.length;
+  console.log(`Checking ${rawRecords.length} records... Skipped ${skippedCount} existing records. Processing ${newRecords.length} new records with Gemini in batches.`);
+
+  if (newRecords.length === 0) return 0;
+
+  // 2. BATCH PROCESSING: Process 10 records per Gemini API call
+  const batchSize = 10;
+  for (let i = 0; i < newRecords.length; i += batchSize) {
+    const batch = newRecords.slice(i, i + batchSize);
     
-    // Check global budget
+    // Check global budget (1 budget unit per batch call is extremely efficient)
     if (!rateLimiter.canMakeCall()) {
-       console.warn(`\n[Rate Limiter] Global Gemini budget (300) exhausted! Queuing remaining ${rawRecords.length - i} records to pending_processing.`);
-       // Write to pending processing queue for next run
-       for (let j = i; j < rawRecords.length; j++) {
+       console.warn(`\n[Rate Limiter] Global Gemini budget exhausted! Queuing remaining ${newRecords.length - i} records to pending_processing.`);
+       for (let j = i; j < newRecords.length; j++) {
           await supabase.from('pending_processing').insert({
-             raw_data: rawRecords[j],
+             raw_data: newRecords[j],
              source: sourceName
           });
        }
@@ -65,23 +90,27 @@ async function processRawRecordsWithGemini(sourceName, rawRecords, rateLimiter) 
     }
 
     rateLimiter.increment();
-    console.log(`  Structuring [${i+1}/${rawRecords.length}]: ${record.source_url || 'Unknown'}`);
+    console.log(`  Structuring Batch [${Math.floor(i/batchSize) + 1}/${Math.ceil(newRecords.length/batchSize)}] (${batch.length} records)`);
     
     try {
-      // Assuming record is either a raw Devfolio object or similar
-      const structured = await structureData(record);
-      if (structured.error) {
-        console.warn(`  -> Structured error: ${structured.error}`);
-        failedRecords.push({ raw: record, error: structured.error });
-      } else {
-        structuredRecords.push(structured);
-      }
+      const structuredBatch = await structureDataBatch(batch);
+      
+      structuredBatch.forEach((structured, idx) => {
+        const raw = batch[idx];
+        if (structured && structured.error) {
+          console.warn(`    -> Record error: ${structured.error}`);
+          failedRecords.push({ raw, error: structured.error });
+        } else if (structured) {
+          structuredRecords.push(structured);
+        }
+      });
     } catch (err) {
-      console.error(`  -> Failed to structure:`, err.message);
-      failedRecords.push({ raw: record, error: err.message });
+      console.error(`  -> Failed to structure batch:`, err.message);
+      batch.forEach(raw => failedRecords.push({ raw, error: err.message }));
     }
     
-    if (i < rawRecords.length - 1) {
+    // Wait briefly between batches to respect API limits (15 RPM -> 4s wait)
+    if (i + batchSize < newRecords.length) {
       await new Promise(r => setTimeout(r, 4000));
     }
   }
