@@ -282,11 +282,11 @@ export default function Feed({
     <div className="flex h-screen w-full overflow-hidden bg-background">
       
       <nav className="w-[88px] border-r border-surface-low/30 bg-surface-lowest flex flex-col items-center py-8 gap-6 z-50 shrink-0">
-        <button 
+        <Link href="/admin"
           className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 text-text-muted hover:text-text-main hover:bg-surface-low"
         >
           <Terminal size={24} strokeWidth={2.5} />
-        </button>
+        </Link>
         <button 
           onClick={() => setActiveTab('discover')}
           className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${activeTab === 'discover' ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,255,136,0.1)]' : 'text-text-muted hover:text-text-main hover:bg-surface-low'}`}
@@ -337,11 +337,9 @@ export default function Feed({
               <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(0,255,136,0.8)]"></div>
               <span className="font-bold text-xs tracking-wider text-text-muted">STREAK: <span className="text-text-main">12</span></span>
             </div>
-            <form action="/auth/signout" method="post">
-              <button className="w-10 h-10 rounded-full bg-surface-low border border-surface-high flex items-center justify-center hover:bg-surface-high transition-colors text-text-muted hover:text-error overflow-hidden">
-                <User size={20} />
-              </button>
-            </form>
+            <Link href="/onboarding" className="w-10 h-10 rounded-full bg-surface-low border border-surface-high flex items-center justify-center hover:bg-surface-high transition-colors text-text-muted hover:text-text-main overflow-hidden">
+              <User size={20} />
+            </Link>
           </div>
         </header>
 
@@ -406,10 +404,11 @@ export default function Feed({
                 <section 
                   key={card.id}
                   ref={index === fullyFilteredOpps.length - 5 ? triggerRef : undefined}
-                  className="snap-item w-full h-full flex items-center justify-center py-6 relative"
+                  /* SNAP TARGET: The wrapper section itself is the snap target to ensure card and pill stay vertically aligned */
+                  className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative"
                 >
                   {/* THE CARD */}
-                  <div className="w-full max-w-[480px] h-full max-h-[820px] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10">
+                  <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-auto h-full max-h-[750px] md:h-[85vh] md:max-h-[850px] md:aspect-[3/4] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 shrink">
                     
                     {/* Top-Left Green Glow Effect inside Card */}
                     <div className="absolute top-0 left-0 w-[80%] h-[40%] bg-gradient-to-br from-primary/5 via-primary/5 to-transparent blur-3xl pointer-events-none"></div>
@@ -445,8 +444,8 @@ export default function Feed({
                       <div className="w-16 h-16 rounded-2xl bg-surface-high border border-primary/20 mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
                          <Compass size={28} className="text-primary" />
                       </div>
-                      <h2 className="text-3xl font-medium leading-[1.1] tracking-tight text-text-main">{card.title}</h2>
-                      <p className="text-[15px] text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-5 font-medium">{card.description}</p>
+                      <h2 className="text-xl lg:text-2xl xl:text-3xl font-medium leading-[1.1] tracking-tight text-text-main line-clamp-2">{card.title}</h2>
+                      <p className="text-sm lg:text-base text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-4 font-medium">{card.description}</p>
                       
                       <div className="flex flex-wrap justify-center gap-2 mt-8">
                         {card.domain_tags && card.domain_tags.map(tag => (
@@ -480,7 +479,7 @@ export default function Feed({
                   </div>
 
                   {/* FLOATING DETACHED PILL (Right Side) */}
-                  <div className="absolute right-6 md:right-[calc(50%-295px)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-6 z-30 pointer-events-auto bg-surface-low border border-surface-high/50 p-3 rounded-2xl shadow-xl">
+                  <div className="flex flex-col items-center gap-6 z-30 bg-surface-low border border-surface-high/50 p-3 rounded-2xl shadow-xl shrink-0">
                     
                     <button 
                       onClick={() => handleBookmark(card.id, status)}
@@ -500,7 +499,7 @@ export default function Feed({
                       <Share2 size={22} strokeWidth={2.5} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
                     </button>
 
-                    <button className="group/btn cursor-pointer active:scale-90 transition-transform">
+                    <button onClick={() => setActionError("Star functionality coming soon!")} className="group/btn cursor-pointer active:scale-90 transition-transform">
                       <Star size={22} strokeWidth={2.5} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
                     </button>
                     
@@ -559,8 +558,8 @@ export default function Feed({
 
 function OpportunitySkeleton() {
   return (
-    <section className="snap-item w-full h-[95vh] flex items-center justify-center pt-20 pb-10 relative">
-      <div className="w-full max-w-[480px] h-full max-h-[820px] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse">
+    <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative">
+      <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-auto h-full max-h-[750px] md:h-[85vh] md:max-h-[850px] md:aspect-[3/4] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse shrink">
         <div className="absolute top-6 left-6 right-6 flex flex-col gap-2">
           <div className="w-24 h-6 bg-surface-high rounded-full"></div>
           <div className="w-32 h-4 bg-surface-high rounded-full mt-1"></div>
