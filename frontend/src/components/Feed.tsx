@@ -409,7 +409,7 @@ export default function Feed({
                   className="snap-item w-full h-full flex items-center justify-center py-6 relative"
                 >
                   {/* THE CARD */}
-                  <div className="w-full max-w-[400px] h-full max-h-[750px] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10">
+                  <div className="w-full max-w-[480px] h-full max-h-[820px] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10">
                     
                     {/* Top-Left Green Glow Effect inside Card */}
                     <div className="absolute top-0 left-0 w-[80%] h-[40%] bg-gradient-to-br from-primary/5 via-primary/5 to-transparent blur-3xl pointer-events-none"></div>
@@ -442,11 +442,11 @@ export default function Feed({
                     </div>
 
                     <div className="absolute top-[140px] bottom-[150px] left-0 right-0 p-8 pb-4 flex flex-col items-center text-center justify-center z-10 pointer-events-none overflow-y-auto hide-scrollbar">
-                      <div className="w-14 h-14 rounded-2xl bg-surface-high border border-primary/20 mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
-                         <Compass size={24} className="text-primary" />
+                      <div className="w-16 h-16 rounded-2xl bg-surface-high border border-primary/20 mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+                         <Compass size={28} className="text-primary" />
                       </div>
-                      <h2 className="text-[28px] font-medium leading-[1.1] tracking-tight text-text-main">{card.title}</h2>
-                      <p className="text-sm text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-4 font-medium">{card.description}</p>
+                      <h2 className="text-3xl font-medium leading-[1.1] tracking-tight text-text-main">{card.title}</h2>
+                      <p className="text-[15px] text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-5 font-medium">{card.description}</p>
                       
                       <div className="flex flex-wrap justify-center gap-2 mt-8">
                         {card.domain_tags && card.domain_tags.map(tag => (
@@ -473,14 +473,14 @@ export default function Feed({
                            </span>
                         </div>
                       </div>
-                      <a href={card.source_url} target="_blank" rel="noopener noreferrer" className="w-full block text-center py-3.5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-[#002113] font-bold text-[15px] tracking-wide hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(0,255,136,0.2)] active:scale-[0.98]">
+                      <a href={card.source_url} target="_blank" rel="noopener noreferrer" className="w-full block text-center py-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-[#002113] font-bold text-base tracking-wide hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(0,255,136,0.2)] active:scale-[0.98]">
                         Apply Now
                       </a>
                     </div>
                   </div>
 
                   {/* FLOATING DETACHED PILL (Right Side) */}
-                  <div className="absolute right-6 md:right-[calc(50%-235px)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-6 z-30 pointer-events-auto bg-surface-low border border-surface-high/50 p-3 rounded-2xl shadow-xl">
+                  <div className="absolute right-6 md:right-[calc(50%-295px)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-6 z-30 pointer-events-auto bg-surface-low border border-surface-high/50 p-3 rounded-2xl shadow-xl">
                     
                     <button 
                       onClick={() => handleBookmark(card.id, status)}
@@ -560,7 +560,7 @@ export default function Feed({
 function OpportunitySkeleton() {
   return (
     <section className="snap-item w-full h-[95vh] flex items-center justify-center pt-20 pb-10 relative">
-      <div className="w-full max-w-[420px] h-full max-h-[750px] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse">
+      <div className="w-full max-w-[480px] h-full max-h-[820px] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse">
         <div className="absolute top-6 left-6 right-6 flex flex-col gap-2">
           <div className="w-24 h-6 bg-surface-high rounded-full"></div>
           <div className="w-32 h-4 bg-surface-high rounded-full mt-1"></div>
