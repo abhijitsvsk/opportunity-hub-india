@@ -95,6 +95,22 @@ async function processRawRecordsWithGemini(sourceName, rawRecords, rateLimiter) 
     try {
       const structuredBatch = await structureDataBatch(batch);
       
+      // [CHECKPOINT UPGRADE] Verify the batch didn't suffer a catastrophic API crash
+      if (structuredBatch.length > 0 && structuredBatch[0] && structuredBatch[0].error) {
+         const errStr = structuredBatch[0].error;
+         if (errStr.includes('malformed') || errStr.includes('groq_failed') || errStr.includes('429')) {
+            console.error(`\n[Checkpoint] Fatal API Failure detected (${errStr})! Aborting and saving all ${newRecords.length - i} remaining records to the pending_processing queue.`);
+            
+            for (let j = i; j < newRecords.length; j++) {
+               await supabase.from('pending_processing').insert({
+                  raw_data: newRecords[j],
+                  source: sourceName
+               });
+            }
+            break; // Stop the pipeline for this source to protect data
+         }
+      }
+      
       structuredBatch.forEach((structured, idx) => {
         const raw = batch[idx];
         if (structured && structured.error) {
@@ -148,9 +164,28 @@ async function runPipelineSource(sourceName, processFn, rateLimiter) {
     console.log(`--- STARTING PIPELINE: ${sourceName.toUpperCase()} ---`);
     console.log(`=========================================`);
     
-    // Most scrapers already return structured data. Only Devfolio returns raw.
-    // To support priority & rate limit, we handle it inside the specific processFn or here.
-    const { scrapedCount, rawRecords, structuredRecords } = await processFn();
+    // Fetch cache of existing URLs for this source to pass to scrapers
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+    const existingUrls = new Set();
+    
+    try {
+      // Fetch all URLs to build a global cache, preventing any capitalization/source mismatches
+      const { data, error } = await supabase
+        .from('opportunities')
+        .select('source_url');
+        
+      if (!error && data) {
+        data.forEach(row => {
+          if (row.source_url) existingUrls.add(row.source_url);
+        });
+      }
+    } catch (e) {
+      console.warn(`Could not fetch cache for ${sourceName}:`, e.message);
+    }
+
+    // Pass existingUrls to the process function
+    const { scrapedCount, rawRecords, structuredRecords } = await processFn({ existingUrls });
     stats.recordsScraped = scrapedCount;
     
     let finalStructured = structuredRecords || [];
@@ -175,7 +210,6 @@ async function runPipelineSource(sourceName, processFn, rateLimiter) {
     }
 
     console.log(`\nUpserting ${finalStructured.length} records to Supabase for ${sourceName}...`);
-    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
     const result = await upsertData(finalStructured, supabaseKey);
     
     if (result.newRecords && result.newRecords.length > 0) {

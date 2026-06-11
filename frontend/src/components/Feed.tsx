@@ -2,7 +2,7 @@
 
 import { 
   Compass, Bookmark, Flame, User, Share2, Star, 
-  ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Trophy, Rocket, Filter, Sparkles, CheckCircle2, LogOut
+  ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Trophy, Rocket, Filter, Sparkles, CheckCircle2, LogOut, Terminal
 } from "lucide-react";
 import { useState, useRef, useTransition, useOptimistic, useCallback, useEffect } from "react";
 import { toggleBookmark, updateApplicationStatus, signOut } from "@/app/actions";
@@ -281,31 +281,33 @@ export default function Feed({
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       
-      <nav className="w-24 border-r border-surface-low/30 bg-surface-lowest flex flex-col items-center py-8 gap-8 z-50 shrink-0">
+      <nav className="w-[88px] border-r border-surface-low/30 bg-surface-lowest flex flex-col items-center py-8 gap-6 z-50 shrink-0">
+        <button 
+          className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 text-text-muted hover:text-text-main hover:bg-surface-low"
+        >
+          <Terminal size={24} strokeWidth={2.5} />
+        </button>
         <button 
           onClick={() => setActiveTab('discover')}
-          className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 w-full ${activeTab === 'discover' ? 'bg-surface-high text-primary border-r-2 border-primary' : 'text-text-muted hover:text-text-main hover:bg-surface-low'}`}
+          className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${activeTab === 'discover' ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,255,136,0.1)]' : 'text-text-muted hover:text-text-main hover:bg-surface-low'}`}
         >
-          <Compass size={28} />
-          <span className="text-[10px] font-bold tracking-wider">DISCOVER</span>
+          <Compass size={24} strokeWidth={2.5} />
         </button>
         <button 
           onClick={() => setActiveTab('saved')}
-          className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 w-full ${activeTab === 'saved' ? 'bg-surface-high text-primary border-r-2 border-primary' : 'text-text-muted hover:text-text-main hover:bg-surface-low'}`}
+          className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${activeTab === 'saved' ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,255,136,0.1)]' : 'text-text-muted hover:text-text-main hover:bg-surface-low'}`}
         >
-          <Bookmark size={28} />
-          <span className="text-[10px] font-bold tracking-wider">SAVED</span>
+          <Bookmark size={24} strokeWidth={2.5} />
         </button>
 
-        <div className="mt-auto mb-4 w-full px-2">
+        <div className="mt-auto mb-4 w-full flex justify-center">
           <form action={signOut}>
             <button 
               type="submit"
-              className="flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 w-full text-text-muted hover:text-red-400 hover:bg-red-500/10"
+              className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 text-text-muted hover:text-error hover:bg-error/10"
               title="Log Out"
             >
-              <LogOut size={24} />
-              <span className="text-[10px] font-bold tracking-wider">EXIT</span>
+              <LogOut size={24} strokeWidth={2.5} />
             </button>
           </form>
         </div>
@@ -330,14 +332,14 @@ export default function Feed({
              </div>
           )}
 
-          <div className="flex items-center gap-6 pointer-events-auto">
-            <div className="glass-panel px-4 py-2 rounded-full flex items-center gap-2 border border-surface-low/50">
-              <Flame size={20} className="text-warning fill-warning" />
-              <span className="font-mono font-bold">12</span>
+          <div className="flex items-center gap-4 pointer-events-auto">
+            <div className="bg-surface-low px-4 py-2.5 rounded-full flex items-center gap-2 border border-surface-high/50">
+              <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(0,255,136,0.8)]"></div>
+              <span className="font-bold text-xs tracking-wider text-text-muted">STREAK: <span className="text-text-main">12</span></span>
             </div>
             <form action="/auth/signout" method="post">
-              <button className="w-12 h-12 rounded-full bg-surface-low border border-surface-high flex items-center justify-center hover:bg-surface-high transition-colors text-text-muted hover:text-error">
-                <User size={24} />
+              <button className="w-10 h-10 rounded-full bg-surface-low border border-surface-high flex items-center justify-center hover:bg-surface-high transition-colors text-text-muted hover:text-error overflow-hidden">
+                <User size={20} />
               </button>
             </form>
           </div>
@@ -345,37 +347,28 @@ export default function Feed({
 
         <>
             {activeTab === 'discover' && (
-              <div className="shrink-0 relative z-40 px-4 py-4 flex gap-2 overflow-x-auto hide-scrollbar items-center bg-background/95 backdrop-blur-md border-b border-surface-low/30">
+              <div className="shrink-0 relative z-40 px-8 py-2 flex gap-3 overflow-x-auto hide-scrollbar items-center bg-transparent">
                 {!activeFilters.has("All") && activeFilters.size > 0 && (
                   <button
                     onClick={() => handleFilterChange("All")}
-                    className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-error/20 text-error border border-error/30 hover:bg-error/30 transition-all duration-150 active:scale-95 shrink-0"
+                    className="px-5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-error/20 text-error hover:bg-error/30 transition-all duration-150 active:scale-95 shrink-0"
                   >
-                    ✕ Clear ({activeFilters.size})
+                    Clear
                   </button>
                 )}
                 {FILTER_DEFS.map(filter => {
-                  const count = activeOpps.filter(op => {
-                    if (!filter.match(op)) return false;
-                    const otherFilters = FILTER_DEFS.filter(f => activeFilters.has(f.id) && f.id !== "All" && f.id !== filter.id);
-                    return otherFilters.every(f => f.match(op));
-                  }).length;
                   const isActive = activeFilters.has(filter.id);
                   return (
                     <button
                       key={filter.id}
                       onClick={() => handleFilterChange(filter.id)}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-150 backdrop-blur-md border active:scale-95 shrink-0 ${
+                      className={`px-6 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 shrink-0 ${
                         isActive
-                          ? 'bg-primary text-[#002113] border-primary shadow-[0_0_12px_rgba(0,255,136,0.35)]'
-                          : 'bg-surface-low/60 text-text-muted border-surface-high/40 hover:bg-surface-high/70 hover:text-text-main hover:border-surface-high'
+                          ? 'bg-primary text-[#002113]'
+                          : 'bg-surface-low border border-surface-high/30 text-text-muted hover:text-text-main hover:bg-surface-high/50'
                       }`}
                     >
-                      <span className={isActive ? 'text-[#002113]' : 'text-text-muted'}>{filter.icon}</span>
                       {filter.label}
-                      <span className={`ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
-                        isActive ? 'bg-[#002113]/20 text-[#002113]' : 'bg-surface-high text-text-muted'
-                      }`}>{count}</span>
                     </button>
                   );
                 })}
@@ -416,122 +409,115 @@ export default function Feed({
                   className="snap-item w-full h-full flex items-center justify-center py-6 relative"
                 >
                   {/* THE CARD */}
-                  <div className="w-full max-w-[420px] h-full max-h-[750px] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10">
+                  <div className="w-full max-w-[400px] h-full max-h-[750px] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10">
                     
                     {/* Top-Left Green Glow Effect inside Card */}
-                    <div className="absolute top-0 left-0 w-[80%] h-[40%] bg-gradient-to-br from-primary/10 via-primary/5 to-transparent blur-3xl pointer-events-none"></div>
+                    <div className="absolute top-0 left-0 w-[80%] h-[40%] bg-gradient-to-br from-primary/5 via-primary/5 to-transparent blur-3xl pointer-events-none"></div>
 
-                    <div className="absolute left-6 right-6 flex justify-between items-start z-10 top-6">
-                      <div className="flex flex-col gap-2">
+                    <div className="absolute left-8 right-8 flex justify-between items-start z-10 top-8">
+                      <div className="flex flex-col gap-3">
                         {closingSoon && (
-                           <span className="text-text-main font-bold text-[10px] tracking-widest uppercase z-20 mb-1 flex items-center gap-1">
-                             <Flame size={12} className="text-warning fill-warning" /> 
-                             {diffDays === 0 ? "Closing Today!" : `${diffDays}d left`}
+                           <span className="text-error font-bold text-[10px] tracking-widest uppercase z-20 flex items-center gap-1.5 border border-error/30 bg-error/10 px-3 py-1.5 rounded-md self-start">
+                             <div className="w-1.5 h-1.5 rounded-full bg-error"></div>
+                             CLOSING SOON
                            </span>
                         )}
-                        <span className="bg-transparent text-primary px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-primary uppercase self-start">
-                          {card.type}
-                        </span>
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono text-text-muted bg-surface-high/50 border border-surface-high/30 self-start mt-1">
-                          Deadline: {card.deadline ? new Date(card.deadline).toLocaleDateString() : 'Rolling'}
+                        <div className="flex items-center gap-2">
+                          <span className="bg-transparent text-primary px-3 py-1 rounded-md text-[10px] font-bold tracking-widest border border-primary uppercase self-start">
+                            {card.type}
+                          </span>
+                          <span className="text-text-muted text-xs font-medium">
+                            Ends in {diffDays}d
+                          </span>
                         </div>
                       </div>
                       
                       {/* Match Score Ring */}
-                      <div className="w-16 h-16 rounded-full flex flex-col items-center justify-center relative">
-                        <div className="absolute w-full h-full rounded-full border-[3px] border-surface-high"></div>
-                        <div className="absolute w-full h-full rounded-full border-[3px] border-primary border-r-transparent border-b-transparent rotate-45"></div>
-                        <span className="font-bold text-sm z-10 text-text-main">94%</span>
-                        <span className="text-[8px] text-text-muted mt-[-2px]">Match</span>
+                      <div className="w-14 h-14 rounded-full flex flex-col items-center justify-center relative shrink-0">
+                        <div className="absolute w-full h-full rounded-full border-[2.5px] border-surface-high"></div>
+                        <div className="absolute w-full h-full rounded-full border-[2.5px] border-primary border-r-transparent border-b-transparent rotate-45"></div>
+                        <span className="font-bold text-[13px] z-10 text-text-main">94%</span>
+                        <span className="text-[7px] text-text-main font-bold tracking-wider mt-[-2px]">MATCH</span>
                       </div>
                     </div>
 
-                    <div className="absolute bottom-[90px] left-0 right-0 p-8 pb-4 flex flex-col items-center text-center justify-end z-10 pointer-events-none">
-                      <div className="w-16 h-16 rounded-full bg-surface-high mb-6 flex items-center justify-center border border-surface-high/50 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-                         <Compass size={28} className="text-primary" />
+                    <div className="absolute top-[140px] bottom-[150px] left-0 right-0 p-8 pb-4 flex flex-col items-center text-center justify-center z-10 pointer-events-none overflow-y-auto hide-scrollbar">
+                      <div className="w-14 h-14 rounded-2xl bg-surface-high border border-primary/20 mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+                         <Compass size={24} className="text-primary" />
                       </div>
-                      <h2 className="text-2xl font-black leading-[1.2] tracking-tight">{card.title}</h2>
-                      <p className="text-sm text-text-muted line-clamp-3 leading-relaxed max-w-[90%] mt-3">{card.description}</p>
+                      <h2 className="text-[28px] font-medium leading-[1.1] tracking-tight text-text-main">{card.title}</h2>
+                      <p className="text-sm text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-4 font-medium">{card.description}</p>
                       
-                      <div className="flex flex-wrap justify-center gap-2 mt-4">
-                        {card.domain_tags && card.domain_tags.slice(0, 4).map(tag => (
-                          <span key={tag} className="px-3 py-1 bg-surface-high rounded-full text-xs font-mono text-text-muted">
+                      <div className="flex flex-wrap justify-center gap-2 mt-8">
+                        {card.domain_tags && card.domain_tags.map(tag => (
+                          <span key={tag} className="px-4 py-1.5 bg-surface-high/50 rounded-lg text-[11px] font-bold tracking-wider text-text-muted border border-surface-high/80">
                             {tag}
                           </span>
                         ))}
-                        {card.domain_tags && card.domain_tags.length > 4 && (
-                          <span className="px-3 py-1 bg-surface-high/50 border border-surface-high rounded-full text-xs font-mono text-text-muted">
-                            +{card.domain_tags.length - 4} more
-                          </span>
-                        )}
                       </div>
                     </div>
 
                     {/* Apply Now Section */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 pt-12 bg-gradient-to-t from-surface-lowest via-surface-lowest/90 to-transparent z-20 flex flex-col pointer-events-auto">
-                      <div className="flex justify-between items-center px-2 mb-4">
-                        <div className="flex flex-col">
-                           <span className="text-sm font-bold text-text-main capitalize">
-                             {card.competitiveness}
+                    <div className="absolute bottom-0 left-0 right-0 p-6 pt-6 border-t border-surface-high/30 z-20 flex flex-col pointer-events-auto bg-surface-low">
+                      <div className="flex justify-between items-center px-2 mb-6">
+                        <div className="flex flex-col items-start gap-1">
+                           <span className="text-[10px] font-bold tracking-widest text-text-muted uppercase">Competitiveness</span>
+                           <span className="text-sm font-bold text-primary capitalize">
+                             {card.competitiveness || "High"}
                            </span>
-                           <span className="text-xs text-text-muted">Competitiveness</span>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                           <span className="text-[10px] font-bold tracking-widest text-text-muted uppercase">Effort Level</span>
+                           <span className="text-sm font-bold text-text-main capitalize">
+                             {card.effort_level || "Medium"}
+                           </span>
                         </div>
                       </div>
-                      <a href={card.source_url} target="_blank" rel="noopener noreferrer" className="w-full block text-center py-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-[#002113] font-bold text-base tracking-wide hover:brightness-110 transition-all shadow-[0_5px_20px_rgba(0,255,136,0.2)] active:scale-[0.98]">
+                      <a href={card.source_url} target="_blank" rel="noopener noreferrer" className="w-full block text-center py-3.5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-[#002113] font-bold text-[15px] tracking-wide hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(0,255,136,0.2)] active:scale-[0.98]">
                         Apply Now
                       </a>
                     </div>
                   </div>
 
                   {/* FLOATING DETACHED PILL (Right Side) */}
-                  <div className="absolute right-4 md:right-[calc(50%-280px)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-6 z-30 pointer-events-auto bg-surface-low/80 backdrop-blur-xl border border-surface-high/50 p-4 rounded-full shadow-2xl">
+                  <div className="absolute right-6 md:right-[calc(50%-235px)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-6 z-30 pointer-events-auto bg-surface-low border border-surface-high/50 p-3 rounded-2xl shadow-xl">
                     
                     <button 
                       onClick={() => handleBookmark(card.id, status)}
-                      className="flex flex-col items-center gap-1 group/btn cursor-pointer active:scale-90 transition-transform"
+                      className="group/btn cursor-pointer active:scale-90 transition-transform"
                     >
                       <Bookmark 
-                        size={24} 
-                        className={`transition-colors duration-150 ${isBookmarked ? "text-primary fill-primary" : "text-text-muted group-hover/btn:text-text-main"}`} 
+                        size={22} 
+                        strokeWidth={2.5}
+                        className={`transition-colors duration-150 ${isBookmarked ? "text-text-main fill-text-main" : "text-text-muted group-hover/btn:text-text-main"}`} 
                       />
-                      <span className="text-[10px] font-mono text-text-muted mt-1">{isBookmarked ? '1' : '0'}</span>
                     </button>
-
-                    <div className="w-8 h-[1px] bg-surface-high/50"></div>
 
                     <button 
                       onClick={() => handleShare(card.source_url)}
-                      className="flex flex-col items-center gap-1 group/btn cursor-pointer active:scale-90 transition-transform"
+                      className="group/btn cursor-pointer active:scale-90 transition-transform"
                     >
-                      <Share2 size={24} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
-                      <span className="text-[10px] font-mono text-text-muted mt-1">5</span>
+                      <Share2 size={22} strokeWidth={2.5} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
                     </button>
 
-                    <div className="w-8 h-[1px] bg-surface-high/50"></div>
-
-                    <button className="flex flex-col items-center gap-1 group/btn cursor-pointer active:scale-90 transition-transform">
-                      <Star size={24} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
-                      <span className="text-[10px] font-mono text-text-muted mt-1">3</span>
+                    <button className="group/btn cursor-pointer active:scale-90 transition-transform">
+                      <Star size={22} strokeWidth={2.5} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
                     </button>
                     
                     {isBookmarked && status !== 'archived' && (
-                      <>
-                        <div className="w-8 h-[1px] bg-surface-high/50"></div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-[10px] font-mono text-text-muted mb-1">Status</span>
-                          <select 
-                            value={status}
-                            onChange={(e) => handleStatusChange(card.id, e.target.value)}
-                            className="bg-surface-lowest text-text-main text-[10px] border border-surface-high/50 rounded-md p-1 outline-none w-20 text-center"
-                          >
-                            <option value="to_apply">Saved</option>
-                            <option value="applied">Applied</option>
-                            <option value="accepted">Accepted</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="archived">Archived</option>
-                          </select>
-                        </div>
-                      </>
+                      <div className="flex flex-col items-center">
+                        <select 
+                          value={status}
+                          onChange={(e) => handleStatusChange(card.id, e.target.value)}
+                          className="bg-surface-lowest text-text-main text-[10px] border border-surface-high/50 rounded-md p-1 outline-none w-16 text-center appearance-none"
+                        >
+                          <option value="to_apply">Saved</option>
+                          <option value="applied">Applied</option>
+                          <option value="accepted">Accepted</option>
+                          <option value="rejected">Rejected</option>
+                          <option value="archived">Archive</option>
+                        </select>
+                      </div>
                     )}
                     
                   </div>
@@ -550,18 +536,18 @@ export default function Feed({
             </div>
 
             {/* UP/DOWN NAVIGATION ARROWS */}
-            <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50 pointer-events-auto">
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 pointer-events-auto">
               <button 
                 onClick={() => scrollByCard('up')}
-                className="w-12 h-12 rounded-full glass-panel border border-surface-high/50 flex items-center justify-center hover:bg-surface-high hover:scale-110 transition-all text-text-muted hover:text-text-main shadow-2xl"
+                className="w-10 h-10 rounded-2xl bg-surface-low border border-surface-high/50 flex items-center justify-center hover:bg-surface-high hover:scale-110 transition-all text-text-muted hover:text-text-main shadow-lg"
               >
-                <ChevronUp size={24} />
+                <ChevronUp size={20} strokeWidth={2.5} />
               </button>
               <button 
                 onClick={() => scrollByCard('down')}
-                className="w-12 h-12 rounded-full bg-surface-high border border-surface-high flex items-center justify-center hover:bg-surface-high/80 hover:scale-110 transition-all text-text-main shadow-2xl"
+                className="w-10 h-10 rounded-2xl bg-surface-low border border-surface-high/50 flex items-center justify-center hover:bg-surface-high hover:scale-110 transition-all text-text-muted hover:text-text-main shadow-lg"
               >
-                <ChevronDown size={24} />
+                <ChevronDown size={20} strokeWidth={2.5} />
               </button>
             </div>
             

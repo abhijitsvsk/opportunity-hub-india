@@ -67,7 +67,8 @@ const CARD_TYPE_PATTERN = /hackathon|fellowship|competition|challenge|buildathon
  * @returns {Promise<Array<{source_url: string, raw_text: string}>>}
  * @throws {Error} If selectors are not configured, navigation fails, or zero results are extracted
  */
-async function scrapeDevfolio() {
+async function scrapeDevfolio(options = {}) {
+  const existingUrls = options.existingUrls || new Set();
   // ---- Guard: Refuse to run with unconfigured selectors ----
   if (!SELECTORS.CARD_CONTAINER) {
     throw new Error(
@@ -216,9 +217,22 @@ async function scrapeDevfolio() {
 
     console.log(`Successfully extracted ${extractedData.length} hackathon cards from listing.`);
 
-    // ---- Filter ENDED cards ----
-    const activeCards = extractedData.filter(card => !/ENDED/i.test(card.raw_text));
-    console.log(`Filtered out ${extractedData.length - activeCards.length} ended hackathons. ${activeCards.length} remaining for deep scrape.`);
+    // ---- Filter ENDED & Cached cards ----
+    const activeCards = [];
+    let endedCount = 0;
+    let cachedCount = 0;
+    
+    extractedData.forEach(card => {
+      if (/ENDED/i.test(card.raw_text)) {
+        endedCount++;
+      } else if (existingUrls.has(card.source_url)) {
+        cachedCount++;
+      } else {
+        activeCards.push(card);
+      }
+    });
+
+    console.log(`Filtered out ${endedCount} ended and ${cachedCount} already-scraped hackathons. ${activeCards.length} remaining for deep scrape.`);
 
     // ---- Deep Scrape Enricher ----
     const enrichedData = [];

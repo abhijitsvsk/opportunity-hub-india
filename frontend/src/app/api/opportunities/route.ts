@@ -44,16 +44,16 @@ export async function GET(request: NextRequest) {
           orConditions.push("type.ilike.%open%");
           break;
         case "AI & ML":
-          orConditions.push("domain_tags.ov.{ai,machine learning,nlp,neural,deep learning}");
+          orConditions.push("domain_tags.ov.{AI,ML,AI/ML,\"Artificial Intelligence\",\"Machine Learning\",NLP,\"Deep Learning\",ai,ml,\"machine learning\",\"artificial intelligence\",nlp,\"deep learning\"}");
           break;
         case "Cybersecurity":
-          orConditions.push("domain_tags.ov.{cyber,security,hacking,forensic,vulnerability}");
+          orConditions.push("domain_tags.ov.{Cybersecurity,cybersecurity,\"Cyber Security\",\"cyber security\",Security,security,Hacking,hacking,Forensics,forensics,Vulnerability,vulnerability}");
           break;
         case "Design":
-          orConditions.push("domain_tags.ov.{design,ux,ui,graphic,visual,figma,adobe}");
+          orConditions.push("domain_tags.ov.{Design,design,UI/UX,UI,UX,ui/ux,ui,ux,\"Graphic Design\",\"graphic design\",Visual,visual,Figma,figma}");
           break;
         case "Web3":
-          orConditions.push("domain_tags.ov.{web3,blockchain,crypto}");
+          orConditions.push("domain_tags.ov.{Web3,web3,Blockchain,blockchain,Crypto,crypto}");
           break;
         case "Low Effort":
           orConditions.push("effort_level.ilike.low");

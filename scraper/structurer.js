@@ -1,4 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require('groq-sdk');
+
+let isGeminiDailyExhausted = false;
 
 /**
  * Structurer using Gemini 1.5 Flash
@@ -89,6 +92,11 @@ async function structureDataBatch(cards) {
 
   if (cards.length === 0) return [];
 
+  if (isGeminiDailyExhausted) {
+    console.log("[Gemini] Circuit breaker active, bypassing to Groq.");
+    return await fallbackToGroq(null, cards);
+  }
+
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 
@@ -166,15 +174,81 @@ ${JSON.stringify(inputData, null, 2)}`;
       });
 
     } catch (err) {
-      if (err.message.includes('429') && attempt < maxRetries) {
-        console.warn(`\n[Gemini API] Hit 429 Quota Error. Pausing for 65 seconds before retry (${attempt}/${maxRetries})...`);
-        await new Promise(resolve => setTimeout(resolve, 65000));
-        continue;
+      if (err.message.includes('429')) {
+        // [CIRCUIT BREAKER] Detect if daily quota is completely exhausted
+        if (err.message.includes('GenerateRequestsPerDay')) {
+          console.warn(`\n[Gemini API] DAILY QUOTA EXHAUSTED detected! Tripping Circuit Breaker to Groq...`);
+          isGeminiDailyExhausted = true;
+          return await fallbackToGroq(prompt, cards);
+        }
+        
+        if (attempt < maxRetries) {
+          console.warn(`\n[Gemini API] Hit 429 Quota Error. Pausing for 65 seconds before retry (${attempt}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, 65000));
+          continue;
+        }
       }
+      
       console.warn(`Failed to parse Gemini batch response. Error: ${err.message}`);
-      // If the entire batch fails to parse, return errors for all items so pipeline continues
-      return cards.map(c => ({ error: `malformed_json_batch: ${err.message}` }));
+      
+      // Fallback to Groq API if Gemini fails
+      return await fallbackToGroq(prompt, cards);
     }
+  }
+}
+
+async function fallbackToGroq(prompt, cards) {
+  if (!process.env.GROQ_API_KEY) {
+    console.warn("GROQ_API_KEY missing. Cannot fallback.");
+    return cards.map(c => ({ error: 'malformed_json_batch' }));
+  }
+
+  try {
+    console.log(`\n[Groq API] Falling back to Groq Llama 3 API for batch...`);
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    
+    // Groq json_object mode requires a JSON object as the root, not an array.
+    const groqPrompt = prompt + "\n\nCRITICAL: You must return a JSON OBJECT with a single key 'records' containing the array. Example: { \"records\": [ {...}, {...} ] }";
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: groqPrompt }],
+      model: 'llama-3.1-8b-instant',
+      temperature: 0.1,
+      response_format: { type: 'json_object' }
+    });
+
+    const responseText = completion.choices[0]?.message?.content || "{}";
+    const parsedData = JSON.parse(responseText);
+    
+    let parsedArray = parsedData.records;
+    if (!Array.isArray(parsedArray)) {
+       if (Array.isArray(parsedData)) parsedArray = parsedData;
+       else return cards.map(c => ({ error: 'groq_malformed_batch' }));
+    }
+
+    // Process each structured record and validate
+    return parsedArray.map((parsed, i) => {
+      if (!parsed) return { error: 'null_record_in_batch' };
+      const card = cards[i] || {};
+
+      if (parsed.deadline) {
+        const deadlineDate = new Date(parsed.deadline);
+        const now = new Date();
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(now.getFullYear() + 1);
+
+        if (deadlineDate < now) return { error: 'stale_opportunity' };
+        if (deadlineDate > oneYearFromNow) return { error: 'deadline_out_of_range' };
+        if (deadlineDate.getFullYear() < 2025) return { error: `invalid_date: ${parsed.deadline}` };
+      }
+
+      parsed.deadline_confidence = card.deadline_confidence || 'none';
+      return parsed;
+    });
+
+  } catch (err) {
+    console.error(`[Groq API] Fallback failed: ${err.message}`);
+    return cards.map(c => ({ error: `groq_failed: ${err.message}` }));
   }
 }
 
