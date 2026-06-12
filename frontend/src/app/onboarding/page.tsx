@@ -94,7 +94,7 @@ export default function OnboardingPage() {
 
   if (completed) {
     return (
-      <div className="h-full w-full overflow-x-hidden overflow-y-auto bg-background text-text-main flex flex-col items-center justify-center relative font-sans">
+      <main className="flex-1 flex flex-col items-center justify-center relative font-sans w-full h-screen">
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
           <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-secondary/20 blur-[120px]"></div>
         </div>
@@ -105,17 +105,17 @@ export default function OnboardingPage() {
           <h2 className="text-3xl font-black mb-2">Profile Complete</h2>
           <p className="text-text-muted text-lg animate-pulse">Showing you opportunities matching your profile...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="h-full w-full overflow-x-hidden overflow-y-auto bg-background text-text-main py-12 px-4 relative font-sans">
+    <main className="flex-1 max-w-2xl mx-auto w-full pt-12 md:pt-20 px-4 md:px-8 relative font-sans pb-20">
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[30vh] bg-primary/10 blur-[150px] rounded-full"></div>
       </div>
 
-      <div className="max-w-2xl mx-auto z-10 relative">
+      <div className="z-10 relative">
         <div className="flex items-center gap-2 justify-center mb-8">
           <div className="w-10 h-10 rounded-full bg-surface-low border border-primary/50 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,136,0.3)]">
             <Compass size={20} className="text-primary" />
@@ -266,6 +266,6 @@ export default function OnboardingPage() {
 
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -98,6 +98,7 @@ export default async function DashboardPage() {
   const profile = await getUserProfile();
 
   const isProfileComplete = profile && 
+    profile.full_name && 
     profile.college_tier && 
     profile.current_year && 
     profile.tech_stack && profile.tech_stack.length > 0 && 

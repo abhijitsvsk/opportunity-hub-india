@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} antialiased font-sans bg-background text-text-main overflow-hidden h-screen w-full flex flex-col`}
+        className={`${inter.variable} antialiased font-sans bg-background text-text-main`}
       >
         {children}
       </body>
