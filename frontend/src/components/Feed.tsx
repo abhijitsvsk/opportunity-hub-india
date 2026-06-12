@@ -424,28 +424,34 @@ export default function Feed({
                         <div className="flex items-center gap-2">
                           <span className="bg-transparent text-primary px-3 py-1 rounded-md text-[10px] font-bold tracking-widest border border-primary uppercase self-start">
                             {card.type}
-                          </span>
-                          <span className="text-text-muted text-xs font-medium">
-                            Ends in {diffDays}d
-                          </span>
-                        </div>
+                    {/* TOP SECTION */}
+                    <div className="p-6 md:p-8 flex justify-between items-start z-20 pointer-events-auto shrink-0">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-high border border-surface-highest text-xs font-bold tracking-widest text-text-main uppercase shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(0,255,136,0.8)]"></span>
+                        {card.type}
                       </div>
                       
-                      {/* Match Score Ring */}
-                      <div className="w-14 h-14 rounded-full flex flex-col items-center justify-center relative shrink-0">
-                        <div className="absolute w-full h-full rounded-full border-[2.5px] border-surface-high"></div>
-                        <div className="absolute w-full h-full rounded-full border-[2.5px] border-primary border-r-transparent border-b-transparent rotate-45"></div>
-                        <span className="font-bold text-[13px] z-10 text-text-main">94%</span>
-                        <span className="text-[7px] text-text-main font-bold tracking-wider mt-[-2px]">MATCH</span>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="relative w-[70px] h-[70px] rounded-full border-2 border-surface-high flex items-center justify-center bg-surface-low shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+                          <svg className="w-full h-full -rotate-90 absolute inset-0" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="4" className="text-surface-high" />
+                            <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray="289" strokeDashoffset="17" className="text-primary transition-all duration-1000 ease-out" />
+                          </svg>
+                          <div className="flex flex-col items-center">
+                            <span className="text-sm font-black text-text-main">94%</span>
+                            <span className="text-[8px] font-bold text-text-muted uppercase tracking-wider">Match</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="absolute top-[140px] bottom-[150px] left-0 right-0 p-8 pb-4 flex flex-col items-center text-center justify-center z-10 pointer-events-none overflow-y-auto hide-scrollbar">
-                      <div className="w-16 h-16 rounded-2xl bg-surface-high border border-primary/20 mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+                    {/* MIDDLE CONTENT - SCROLLABLE */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-8 pt-0 z-10 overflow-y-auto hide-scrollbar text-center pointer-events-none">
+                      <div className="w-16 h-16 shrink-0 rounded-2xl bg-surface-high border border-primary/20 mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
                          <Compass size={28} className="text-primary" />
                       </div>
-                      <h2 className="text-xl lg:text-2xl xl:text-3xl font-medium leading-[1.1] tracking-tight text-text-main line-clamp-2">{card.title}</h2>
-                      <p className="text-sm lg:text-base text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-4 font-medium">{card.description}</p>
+                      <h2 className="text-xl lg:text-2xl xl:text-3xl font-bold leading-normal tracking-tight text-text-main line-clamp-2 pb-1 shrink-0">{card.title}</h2>
+                      <p className="text-sm lg:text-base text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-3 font-medium shrink-0">{card.description}</p>
                       
                       <div className="flex flex-wrap justify-center gap-2 mt-8">
                         {card.domain_tags && card.domain_tags.map(tag => (
@@ -456,8 +462,8 @@ export default function Feed({
                       </div>
                     </div>
 
-                    {/* Apply Now Section */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 pt-6 border-t border-surface-high/30 z-20 flex flex-col pointer-events-auto bg-surface-low">
+                    {/* BOTTOM SECTION */}
+                    <div className="p-6 md:p-8 z-20 shrink-0 bg-gradient-to-t from-surface-low via-surface-low/95 to-transparent pt-4 pointer-events-auto">
                       <div className="flex justify-between items-center px-2 mb-6">
                         <div className="flex flex-col items-start gap-1">
                            <span className="text-[10px] font-bold tracking-widest text-text-muted uppercase">Competitiveness</span>
@@ -559,21 +565,18 @@ export default function Feed({
 function OpportunitySkeleton() {
   return (
     <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative">
-      <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-[500px] lg:w-[600px] xl:w-[700px] h-[80vh] md:h-[85vh] max-h-[850px] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse shrink-0">
-        <div className="absolute top-6 left-6 right-6 flex flex-col gap-2">
+      <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-[500px] lg:w-[600px] xl:w-[700px] h-[80vh] md:h-[85vh] max-h-[850px] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse shrink-0">
+        <div className="p-6 md:p-8 flex flex-col gap-2 shrink-0">
           <div className="w-24 h-6 bg-surface-high rounded-full"></div>
           <div className="w-32 h-4 bg-surface-high rounded-full mt-1"></div>
         </div>
-        <div className="absolute top-6 right-6 w-16 h-16 rounded-full bg-surface-high"></div>
-        <div className="absolute bottom-[90px] left-0 right-0 p-8 pb-4 flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full bg-surface-high mb-6"></div>
-          <div className="w-3/4 h-8 bg-surface-high rounded-md mb-4"></div>
-          <div className="w-full h-4 bg-surface-high rounded-sm mb-2"></div>
-          <div className="w-5/6 h-4 bg-surface-high rounded-sm mb-4"></div>
-          <div className="flex gap-2"><div className="w-16 h-6 bg-surface-high rounded-full"></div><div className="w-20 h-6 bg-surface-high rounded-full"></div></div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6 shrink-0">
+          <div className="w-16 h-16 bg-surface-high rounded-2xl"></div>
+          <div className="w-3/4 h-8 bg-surface-high rounded-lg"></div>
+          <div className="w-1/2 h-4 bg-surface-high rounded-lg"></div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 p-6 pt-12 bg-surface-lowest/90 z-20 flex flex-col">
-          <div className="w-full h-14 rounded-xl bg-surface-high"></div>
+        <div className="p-6 md:p-8 mt-auto shrink-0">
+          <div className="w-full h-14 bg-surface-high rounded-xl"></div>
         </div>
       </div>
     </section>
