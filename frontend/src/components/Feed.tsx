@@ -51,6 +51,7 @@ export default function Feed({
 
   const [activeTab, setActiveTab] = useState("discover");
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(["All"]));
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterKey, setFilterKey] = useState(0); 
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -315,14 +316,74 @@ export default function Feed({
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
         
-        <header className="h-20 shrink-0 flex items-center justify-between px-8 relative z-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.2)]">
-              <span className="text-background font-black text-xl tracking-tighter">O</span>
+        <header className="h-20 shrink-0 flex items-center justify-between px-4 md:px-8 relative z-50">
+          <div className="flex items-center gap-4 md:gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.2)]">
+                <span className="text-background font-black text-xl tracking-tighter">O</span>
+              </div>
+              <h1 className="text-2xl font-black tracking-tight text-text-main hidden lg:block">
+                Opp<span className="text-primary">Hub</span>
+              </h1>
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-text-main">
-              Opp<span className="text-primary">Hub</span>
-            </h1>
+
+            {/* FILTER DROPDOWN */}
+            {activeTab === 'discover' && (
+              <div className="relative">
+                <button 
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-surface-low border border-surface-high/50 text-sm font-bold text-text-main hover:bg-surface-high transition-all shadow-lg active:scale-95"
+                >
+                  <Filter size={16} className={activeFilters.has("All") ? "text-text-muted" : "text-primary"} />
+                  <span className="hidden sm:inline">Filters</span>
+                  {!activeFilters.has("All") && (
+                    <span className="bg-primary text-[#002113] w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black">
+                      {activeFilters.size}
+                    </span>
+                  )}
+                  <ChevronDown size={16} className={`transition-transform text-text-muted ${isFilterOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {isFilterOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsFilterOpen(false)}></div>
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-surface-low border border-surface-high/50 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 z-50 max-h-[60vh] overflow-y-auto hide-scrollbar">
+                      {!activeFilters.has("All") && activeFilters.size > 0 && (
+                        <button
+                          onClick={() => { handleFilterChange("All"); setIsFilterOpen(false); }}
+                          className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold bg-error/10 text-error hover:bg-error/20 transition-all text-left mb-1"
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                      {FILTER_DEFS.map(filter => {
+                        const isActive = activeFilters.has(filter.id);
+                        return (
+                          <button
+                            key={filter.id}
+                            onClick={() => {
+                              handleFilterChange(filter.id);
+                              if (filter.id === "All") setIsFilterOpen(false);
+                            }}
+                            className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-left ${
+                              isActive
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-text-muted hover:text-text-main hover:bg-surface-high/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {filter.icon}
+                              {filter.label}
+                            </div>
+                            {isActive && <CheckCircle2 size={16} className="text-primary" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           
           {actionError && (
@@ -344,34 +405,6 @@ export default function Feed({
         </header>
 
         <>
-            {activeTab === 'discover' && (
-              <div className="shrink-0 relative z-40 px-8 py-2 flex gap-3 overflow-x-auto hide-scrollbar items-center bg-transparent">
-                {!activeFilters.has("All") && activeFilters.size > 0 && (
-                  <button
-                    onClick={() => handleFilterChange("All")}
-                    className="px-5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-error/20 text-error hover:bg-error/30 transition-all duration-150 active:scale-95 shrink-0"
-                  >
-                    Clear
-                  </button>
-                )}
-                {FILTER_DEFS.map(filter => {
-                  const isActive = activeFilters.has(filter.id);
-                  return (
-                    <button
-                      key={filter.id}
-                      onClick={() => handleFilterChange(filter.id)}
-                      className={`px-6 py-2 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95 shrink-0 ${
-                        isActive
-                          ? 'bg-primary text-[#002113]'
-                          : 'bg-surface-low border border-surface-high/30 text-text-muted hover:text-text-main hover:bg-surface-high/50'
-                      }`}
-                    >
-                      {filter.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
 
             {/* SHORTS-STYLE VERTICAL FEED */}
             <div 
