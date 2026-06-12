@@ -408,7 +408,10 @@ export default function Feed({
                   className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative"
                 >
                   {/* THE CARD */}
-                  <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-[500px] lg:w-[600px] xl:w-[700px] h-[80vh] md:h-[85vh] max-h-[850px] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 shrink-0">
+                  <div 
+                    className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.8)]"
+                    style={{ '--card-size': 'min(85dvh, calc((100vw - 90px) / 0.8), 850px)' } as React.CSSProperties}
+                  >
                     
                     {/* Top-Left Green Glow Effect inside Card */}
                     <div className="absolute top-0 left-0 w-[80%] h-[40%] bg-gradient-to-br from-primary/5 via-primary/5 to-transparent blur-3xl pointer-events-none"></div>
@@ -425,7 +428,7 @@ export default function Feed({
                           <span className="bg-transparent text-primary px-3 py-1 rounded-md text-[10px] font-bold tracking-widest border border-primary uppercase self-start">
                             {card.type}
                     {/* TOP SECTION */}
-                    <div className="p-6 md:p-8 flex justify-between items-start z-20 pointer-events-auto shrink-0">
+                    <div className="p-[clamp(1.25rem,2.5dvh,2rem)] flex justify-between items-start z-20 pointer-events-auto">
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-high border border-surface-highest text-xs font-bold tracking-widest text-text-main uppercase shadow-sm">
                         <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(0,255,136,0.8)]"></span>
                         {card.type}
@@ -446,12 +449,12 @@ export default function Feed({
                     </div>
 
                     {/* MIDDLE CONTENT - SCROLLABLE */}
-                    <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-8 pt-0 z-10 overflow-y-auto hide-scrollbar text-center pointer-events-none">
-                      <div className="w-16 h-16 shrink-0 rounded-2xl bg-surface-high border border-primary/20 mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
+                    <div className="min-h-0 flex flex-col items-center justify-center p-[clamp(1.25rem,2.5dvh,2rem)] pt-0 z-10 overflow-y-auto hide-scrollbar text-center pointer-events-none">
+                      <div className="w-[clamp(3rem,6dvh,4rem)] h-[clamp(3rem,6dvh,4rem)] shrink-0 rounded-2xl bg-surface-high border border-primary/20 mb-[clamp(1rem,3dvh,1.5rem)] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
                          <Compass size={28} className="text-primary" />
                       </div>
-                      <h2 className="text-xl lg:text-2xl xl:text-3xl font-bold leading-normal tracking-tight text-text-main line-clamp-2 pb-1 shrink-0">{card.title}</h2>
-                      <p className="text-sm lg:text-base text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-3 font-medium shrink-0">{card.description}</p>
+                      <h2 className="text-[clamp(1.25rem,3dvh,2rem)] font-bold leading-normal tracking-tight text-text-main line-clamp-2 pb-1 shrink-0">{card.title}</h2>
+                      <p className="text-[clamp(0.875rem,1.5dvh,1.125rem)] text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-[clamp(0.5rem,1.5dvh,1rem)] font-medium shrink-0">{card.description}</p>
                       
                       <div className="flex flex-wrap justify-center gap-2 mt-8">
                         {card.domain_tags && card.domain_tags.map(tag => (
@@ -463,7 +466,7 @@ export default function Feed({
                     </div>
 
                     {/* BOTTOM SECTION */}
-                    <div className="p-6 md:p-8 z-20 shrink-0 bg-gradient-to-t from-surface-low via-surface-low/95 to-transparent pt-4 pointer-events-auto">
+                    <div className="p-[clamp(1.25rem,2.5dvh,2rem)] z-20 shrink-0 bg-gradient-to-t from-surface-low via-surface-low/95 to-transparent pt-[clamp(0.5rem,1.5dvh,1rem)] pointer-events-auto">
                       <div className="flex justify-between items-center px-2 mb-6">
                         <div className="flex flex-col items-start gap-1">
                            <span className="text-[10px] font-bold tracking-widest text-text-muted uppercase">Competitiveness</span>
@@ -565,18 +568,21 @@ export default function Feed({
 function OpportunitySkeleton() {
   return (
     <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative">
-      <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-[500px] lg:w-[600px] xl:w-[700px] h-[80vh] md:h-[85vh] max-h-[850px] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse shrink-0">
-        <div className="p-6 md:p-8 flex flex-col gap-2 shrink-0">
-          <div className="w-24 h-6 bg-surface-high rounded-full"></div>
-          <div className="w-32 h-4 bg-surface-high rounded-full mt-1"></div>
+      <div 
+        className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 animate-pulse shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.8)]"
+        style={{ '--card-size': 'min(85dvh, calc((100vw - 90px) / 0.8), 850px)' } as React.CSSProperties}
+      >
+        <div className="p-[clamp(1.25rem,2.5dvh,2rem)] flex flex-col gap-2">
+          <div className="w-24 h-[clamp(1rem,2dvh,1.5rem)] bg-surface-high rounded-full"></div>
+          <div className="w-32 h-[clamp(0.75rem,1.5dvh,1rem)] bg-surface-high rounded-full mt-1"></div>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6 shrink-0">
-          <div className="w-16 h-16 bg-surface-high rounded-2xl"></div>
-          <div className="w-3/4 h-8 bg-surface-high rounded-lg"></div>
-          <div className="w-1/2 h-4 bg-surface-high rounded-lg"></div>
+        <div className="min-h-0 flex flex-col items-center justify-center gap-[clamp(1rem,3dvh,1.5rem)] p-[clamp(1.25rem,2.5dvh,2rem)]">
+          <div className="w-[clamp(3rem,6dvh,4rem)] h-[clamp(3rem,6dvh,4rem)] bg-surface-high rounded-2xl"></div>
+          <div className="w-3/4 h-[clamp(1.5rem,3dvh,2rem)] bg-surface-high rounded-lg"></div>
+          <div className="w-1/2 h-[clamp(0.75rem,1.5dvh,1rem)] bg-surface-high rounded-lg"></div>
         </div>
-        <div className="p-6 md:p-8 mt-auto shrink-0">
-          <div className="w-full h-14 bg-surface-high rounded-xl"></div>
+        <div className="p-[clamp(1.25rem,2.5dvh,2rem)]">
+          <div className="w-full h-[clamp(3rem,6dvh,3.5rem)] bg-surface-high rounded-xl"></div>
         </div>
       </div>
     </section>
