@@ -290,7 +290,10 @@ export default function Feed({
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div 
+      className="flex h-screen w-full overflow-hidden bg-background"
+      style={{ '--sidebar-width': '88px' } as React.CSSProperties}
+    >
       
       <nav className="w-[88px] border-r border-surface-low/30 bg-surface-lowest flex flex-col items-center py-8 gap-6 z-50 shrink-0">
         <Link href="/admin"
@@ -450,7 +453,8 @@ export default function Feed({
                 >
                   {/* THE CARD */}
                   <div 
-                    className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] w-[calc(100%-62px)] md:w-full max-w-[420px] h-[calc(100dvh-128px)] max-h-[850px]"
+                    className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.8)]"
+                    style={{ '--card-size': 'min(85dvh, calc((100vw - var(--sidebar-width) - 80px) / 0.8))' } as React.CSSProperties}
                   >
                     
                     {/* Top-Left Green Glow Effect inside Card */}
@@ -493,12 +497,12 @@ export default function Feed({
                     </div>
 
                     {/* MIDDLE CONTENT - SCROLLABLE */}
-                    <div className="min-h-0 flex flex-col items-center justify-center p-[clamp(1.25rem,2.5dvh,2rem)] pt-0 z-10 overflow-y-auto hide-scrollbar text-center">
+                    <div className="min-h-0 flex flex-col items-center justify-center p-[clamp(1.25rem,2.5dvh,2rem)] landscape:p-4 pt-0 z-10 overflow-y-auto hide-scrollbar text-center">
                       <div className="w-[clamp(3rem,6dvh,4rem)] h-[clamp(3rem,6dvh,4rem)] shrink-0 rounded-2xl bg-surface-high border border-primary/20 mb-[clamp(1rem,3dvh,1.5rem)] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
                          <Compass size={28} className="text-primary" />
                       </div>
                       <h2 className="text-[clamp(1.25rem,3dvh,2rem)] font-bold leading-normal tracking-tight text-text-main line-clamp-2 pb-1 shrink-0">{card.title}</h2>
-                      <p className="text-[clamp(0.875rem,1.5dvh,1.125rem)] text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-[clamp(0.5rem,1.5dvh,1rem)] font-medium shrink-0">{card.description}</p>
+                      <p className="text-[clamp(0.875rem,1.5dvh,1.125rem)] text-text-muted line-clamp-4 leading-relaxed max-w-[95%] mt-[clamp(0.5rem,1.5dvh,1rem)] font-medium shrink-0 landscape:hidden">{card.description}</p>
                       
                       <div className="flex flex-wrap justify-center gap-2 mt-8">
                         {card.domain_tags && card.domain_tags.map(tag => (
@@ -612,17 +616,22 @@ export default function Feed({
 function OpportunitySkeleton() {
   return (
     <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative">
+      {/* 
+        CRITICAL: The className and inline style of this wrapper MUST stay perfectly synced verbatim
+        with the real card wrapper to prevent layout shifts during skeleton replacement!
+      */}
       <div 
-        className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 animate-pulse shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] w-[calc(100%-62px)] md:w-full max-w-[420px] h-[calc(100dvh-128px)] max-h-[850px]"
+        className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 animate-pulse shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.8)]"
+        style={{ '--card-size': 'min(85dvh, calc((100vw - var(--sidebar-width) - 80px) / 0.8))' } as React.CSSProperties}
       >
         <div className="p-[clamp(1.25rem,2.5dvh,2rem)] flex flex-col gap-2">
           <div className="w-24 h-[clamp(1rem,2dvh,1.5rem)] bg-surface-high rounded-full"></div>
           <div className="w-32 h-[clamp(0.75rem,1.5dvh,1rem)] bg-surface-high rounded-full mt-1"></div>
         </div>
-        <div className="min-h-0 flex flex-col items-center justify-center gap-[clamp(1rem,3dvh,1.5rem)] p-[clamp(1.25rem,2.5dvh,2rem)]">
+        <div className="min-h-0 flex flex-col items-center justify-center gap-[clamp(1rem,3dvh,1.5rem)] p-[clamp(1.25rem,2.5dvh,2rem)] landscape:p-4">
           <div className="w-[clamp(3rem,6dvh,4rem)] h-[clamp(3rem,6dvh,4rem)] bg-surface-high rounded-2xl"></div>
           <div className="w-3/4 h-[clamp(1.5rem,3dvh,2rem)] bg-surface-high rounded-lg"></div>
-          <div className="w-1/2 h-[clamp(0.75rem,1.5dvh,1rem)] bg-surface-high rounded-lg"></div>
+          <div className="w-1/2 h-[clamp(0.75rem,1.5dvh,1rem)] bg-surface-high rounded-lg landscape:hidden"></div>
         </div>
         <div className="p-[clamp(1.25rem,2.5dvh,2rem)]">
           <div className="w-full h-[clamp(3rem,6dvh,3.5rem)] bg-surface-high rounded-xl"></div>
