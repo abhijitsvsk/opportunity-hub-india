@@ -3,10 +3,10 @@
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   
-  --color-background: #0B0E14;
-  --color-surface-lowest: #0B0E14;
-  --color-surface-low: #131822;
-  --color-surface-high: #202735;
+  --color-background: #09090b;
+  --color-surface-lowest: #09090b;
+  --color-surface-low: #18181b;
+  --color-surface-high: #27272a;
   
   --color-primary: #00FF88;
   --color-primary-container: #00D1FF;
