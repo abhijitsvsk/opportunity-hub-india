@@ -408,7 +408,7 @@ export default function Feed({
                   className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative"
                 >
                   {/* THE CARD */}
-                  <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-auto h-full max-h-[750px] md:h-[85vh] md:max-h-[850px] md:aspect-[3/4] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 shrink">
+                  <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-[500px] lg:w-[600px] xl:w-[700px] h-[80vh] md:h-[85vh] max-h-[850px] relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 shrink-0">
                     
                     {/* Top-Left Green Glow Effect inside Card */}
                     <div className="absolute top-0 left-0 w-[80%] h-[40%] bg-gradient-to-br from-primary/5 via-primary/5 to-transparent blur-3xl pointer-events-none"></div>
@@ -559,7 +559,7 @@ export default function Feed({
 function OpportunitySkeleton() {
   return (
     <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative">
-      <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-auto h-full max-h-[750px] md:h-[85vh] md:max-h-[850px] md:aspect-[3/4] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse shrink">
+      <div className="w-full max-w-[calc(100%-60px)] md:max-w-none md:w-[500px] lg:w-[600px] xl:w-[700px] h-[80vh] md:h-[85vh] max-h-[850px] relative rounded-[2rem] bg-surface-low overflow-hidden shadow-2xl flex flex-col border border-surface-high/30 z-10 animate-pulse shrink-0">
         <div className="absolute top-6 left-6 right-6 flex flex-col gap-2">
           <div className="w-24 h-6 bg-surface-high rounded-full"></div>
           <div className="w-32 h-4 bg-surface-high rounded-full mt-1"></div>
