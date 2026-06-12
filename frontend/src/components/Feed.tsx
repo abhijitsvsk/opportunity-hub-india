@@ -302,15 +302,13 @@ export default function Feed({
         </button>
 
         <div className="mt-auto mb-4 w-full flex justify-center">
-          <form action={signOut}>
-            <button 
-              type="submit"
-              className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 text-text-muted hover:text-error hover:bg-error/10"
-              title="Log Out"
-            >
-              <LogOut size={24} strokeWidth={2.5} />
-            </button>
-          </form>
+          <button 
+            onClick={() => startTransition(() => { signOut(); })}
+            className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 text-text-muted hover:text-error hover:bg-error/10 cursor-pointer"
+            title="Log Out"
+          >
+            <LogOut size={24} strokeWidth={2.5} />
+          </button>
         </div>
       </nav>
 
@@ -442,37 +440,33 @@ export default function Feed({
                 >
                   {/* THE CARD */}
                   <div 
-                    className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.8)]"
-                    style={{ '--card-size': 'min(calc(100dvh - 128px), calc((100vw - 92px) / 0.8), 850px)' } as React.CSSProperties}
+                    className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] w-[calc(100%-62px)] md:w-full max-w-[420px] h-[calc(100dvh-128px)] max-h-[850px]"
                   >
                     
                     {/* Top-Left Green Glow Effect inside Card */}
                     <div className="absolute top-0 left-0 w-[80%] h-[40%] bg-gradient-to-br from-primary/5 via-primary/5 to-transparent blur-3xl pointer-events-none"></div>
 
-                    <div className="absolute left-8 right-8 flex justify-between items-start z-10 top-8">
+                    {/* TOP SECTION */}
+                    <div className="p-[clamp(1.25rem,2.5dvh,2rem)] flex justify-between items-start z-20 pointer-events-auto relative pt-8">
                       <div className="flex flex-col gap-3">
-                        {closingSoon && (
-                           <span className="text-error font-bold text-[10px] tracking-widest uppercase z-20 flex items-center gap-1.5 border border-error/30 bg-error/10 px-3 py-1.5 rounded-md self-start">
-                             <div className="w-1.5 h-1.5 rounded-full bg-error"></div>
-                             CLOSING SOON
+                        {closingSoon ? (
+                           <span className="text-error font-bold text-[10px] tracking-widest uppercase flex items-center gap-1.5 border border-error/30 bg-error/10 px-3 py-1.5 rounded-md self-start">
+                             <div className="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></div>
+                             {diffDays === 0 ? 'ENDS TODAY' : `ENDS IN ${diffDays}D`}
                            </span>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <span className="bg-transparent text-primary px-3 py-1 rounded-md text-[10px] font-bold tracking-widest border border-primary uppercase self-start">
-                            {card.type}
-                          </span>
+                        ) : diffDays > 0 ? (
+                           <span className="text-text-muted font-bold text-[10px] tracking-widest uppercase flex items-center gap-1.5 border border-surface-high bg-surface-high/50 px-3 py-1.5 rounded-md self-start">
+                             ENDS IN {diffDays}D
+                           </span>
+                        ) : null}
+                        
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-high border border-surface-highest text-xs font-bold tracking-widest text-text-main uppercase shadow-sm self-start">
+                          <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(0,255,136,0.8)]"></span>
+                          {card.type}
                         </div>
                       </div>
-                    </div>
-
-                    {/* TOP SECTION */}
-                    <div className="p-[clamp(1.25rem,2.5dvh,2rem)] flex justify-between items-start z-20 pointer-events-auto">
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-high border border-surface-highest text-xs font-bold tracking-widest text-text-main uppercase shadow-sm">
-                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(0,255,136,0.8)]"></span>
-                        {card.type}
-                      </div>
                       
-                      <div className="flex flex-col items-end gap-1">
+                      <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
                         <div className="relative w-[70px] h-[70px] rounded-full border-2 border-surface-high flex items-center justify-center bg-surface-low shadow-[0_0_20px_rgba(0,0,0,0.3)]">
                           <svg className="w-full h-full -rotate-90 absolute inset-0" viewBox="0 0 100 100">
                             <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="4" className="text-surface-high" />
@@ -487,7 +481,7 @@ export default function Feed({
                     </div>
 
                     {/* MIDDLE CONTENT - SCROLLABLE */}
-                    <div className="min-h-0 flex flex-col items-center justify-center p-[clamp(1.25rem,2.5dvh,2rem)] pt-0 z-10 overflow-y-auto hide-scrollbar text-center pointer-events-none">
+                    <div className="min-h-0 flex flex-col items-center justify-center p-[clamp(1.25rem,2.5dvh,2rem)] pt-0 z-10 overflow-y-auto hide-scrollbar text-center">
                       <div className="w-[clamp(3rem,6dvh,4rem)] h-[clamp(3rem,6dvh,4rem)] shrink-0 rounded-2xl bg-surface-high border border-primary/20 mb-[clamp(1rem,3dvh,1.5rem)] flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.2)]">
                          <Compass size={28} className="text-primary" />
                       </div>
@@ -607,8 +601,7 @@ function OpportunitySkeleton() {
   return (
     <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative">
       <div 
-        className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 animate-pulse shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.8)]"
-        style={{ '--card-size': 'min(calc(100dvh - 128px), calc((100vw - 92px) / 0.8), 850px)' } as React.CSSProperties}
+        className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 animate-pulse shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] w-[calc(100%-62px)] md:w-full max-w-[420px] h-[calc(100dvh-128px)] max-h-[850px]"
       >
         <div className="p-[clamp(1.25rem,2.5dvh,2rem)] flex flex-col gap-2">
           <div className="w-24 h-[clamp(1rem,2dvh,1.5rem)] bg-surface-high rounded-full"></div>
