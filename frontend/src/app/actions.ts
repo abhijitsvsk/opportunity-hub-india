@@ -3,6 +3,24 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+
+const AuthSchema = z.object({
+  email: z.string().email("Please provide a valid email address."),
+  password: z.string().min(6, "Password must be at least 6 characters long.")
+});
+
+const ProfileSchema = z.object({
+  full_name: z.string().min(1, "Full name is required."),
+  college_tier: z.string().optional(),
+  current_year: z.string().optional(),
+  graduation_year: z.string().optional(),
+  location_preference: z.string().optional(),
+  focus_area: z.string().optional(),
+  gender: z.string().optional().nullable(),
+  experience_level: z.string().optional().nullable(),
+  tech_stack: z.string().optional()
+});
 
 export async function toggleBookmark(opportunityId: string, currentStatus: string | null) {
   const supabase = await createClient();
@@ -56,18 +74,34 @@ export async function updateUserProfile(formData: FormData) {
     throw new Error("You must be logged in to update your profile.");
   }
 
-  const rawTechStack = formData.get("tech_stack") as string;
-  const techStack = rawTechStack ? rawTechStack.split(',').map(s => s.trim()) : [];
+  const parsed = ProfileSchema.safeParse({
+    full_name: formData.get("full_name"),
+    college_tier: formData.get("college_tier"),
+    current_year: formData.get("current_year"),
+    graduation_year: formData.get("graduation_year"),
+    location_preference: formData.get("location_preference"),
+    focus_area: formData.get("focus_area"),
+    gender: formData.get("gender"),
+    experience_level: formData.get("experience_level"),
+    tech_stack: formData.get("tech_stack"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const rawTechStack = parsed.data.tech_stack;
+  const techStack = rawTechStack ? rawTechStack.split(',').map(s => s.trim()).filter(Boolean) : [];
 
   const profileData = {
-    full_name: formData.get("full_name") as string,
-    college_tier: formData.get("college_tier") as string,
-    current_year: formData.get("current_year") as string,
-    graduation_year: formData.get("graduation_year") as string,
-    location_preference: formData.get("location_preference") as string,
-    focus_area: formData.get("focus_area") as string,
-    gender: formData.get("gender") as string || null,
-    experience_level: formData.get("experience_level") as string || null,
+    full_name: parsed.data.full_name,
+    college_tier: parsed.data.college_tier || null,
+    current_year: parsed.data.current_year || null,
+    graduation_year: parsed.data.graduation_year || null,
+    location_preference: parsed.data.location_preference || null,
+    focus_area: parsed.data.focus_area || null,
+    gender: parsed.data.gender || null,
+    experience_level: parsed.data.experience_level || null,
     tech_stack: techStack,
     updated_at: new Date().toISOString()
   };
@@ -100,8 +134,16 @@ export async function getUserProfile() {
 }
 
 export async function signIn(formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+  const parsed = AuthSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password")
+  });
+
+  if (!parsed.success) {
+    redirect(`/login?error=${encodeURIComponent(parsed.error.issues[0].message)}`);
+  }
+
+  const { email, password } = parsed.data;
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -118,8 +160,16 @@ export async function signIn(formData: FormData) {
 }
 
 export async function signUp(formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+  const parsed = AuthSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password")
+  });
+
+  if (!parsed.success) {
+    redirect(`/login?error=${encodeURIComponent(parsed.error.issues[0].message)}`);
+  }
+
+  const { email, password } = parsed.data;
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signUp({
