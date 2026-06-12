@@ -443,7 +443,7 @@ export default function Feed({
                   {/* THE CARD */}
                   <div 
                     className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.8)]"
-                    style={{ '--card-size': 'min(85dvh, calc((100vw - 92px) / 0.8), 850px)' } as React.CSSProperties}
+                    style={{ '--card-size': 'min(calc(100dvh - 128px), calc((100vw - 92px) / 0.8), 850px)' } as React.CSSProperties}
                   >
                     
                     {/* Top-Left Green Glow Effect inside Card */}
@@ -608,7 +608,7 @@ function OpportunitySkeleton() {
     <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-6 px-4 md:px-0 relative">
       <div 
         className="relative rounded-[2.5rem] bg-surface-low overflow-hidden shadow-2xl border border-surface-high/30 z-10 animate-pulse shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.8)]"
-        style={{ '--card-size': 'min(85dvh, calc((100vw - 92px) / 0.8), 850px)' } as React.CSSProperties}
+        style={{ '--card-size': 'min(calc(100dvh - 128px), calc((100vw - 92px) / 0.8), 850px)' } as React.CSSProperties}
       >
         <div className="p-[clamp(1.25rem,2.5dvh,2rem)] flex flex-col gap-2">
           <div className="w-24 h-[clamp(1rem,2dvh,1.5rem)] bg-surface-high rounded-full"></div>
