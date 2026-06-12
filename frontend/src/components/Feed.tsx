@@ -121,11 +121,21 @@ export default function Feed({
     });
   };
 
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const activeOpps = allOpps.filter(op => {
     if (activeTab === "saved") return optimisticSaved.has(op.id);
+    
+    // Skip date filtering during SSR to prevent hydration mismatch due to server/client timezone differences
+    if (!isMounted) return true;
+
     if (op.deadline) {
       const d = new Date(op.deadline);
       d.setHours(0, 0, 0, 0);
@@ -449,7 +459,9 @@ export default function Feed({
                     {/* TOP SECTION */}
                     <div className="p-[clamp(1.25rem,2.5dvh,2rem)] flex justify-between items-start z-20 pointer-events-auto relative pt-8">
                       <div className="flex flex-col gap-3">
-                        {closingSoon ? (
+                        {!isMounted ? (
+                           <div className="h-7 w-24 bg-surface-high/50 rounded-md animate-pulse"></div>
+                        ) : closingSoon ? (
                            <span className="text-error font-bold text-[10px] tracking-widest uppercase flex items-center gap-1.5 border border-error/30 bg-error/10 px-3 py-1.5 rounded-md self-start">
                              <div className="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></div>
                              {diffDays === 0 ? 'ENDS TODAY' : `ENDS IN ${diffDays}D`}
