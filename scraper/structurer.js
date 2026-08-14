@@ -12,8 +12,13 @@ async function structureData(card) {
     throw new Error('GEMINI_API_KEY environment variable is missing.');
   }
 
+  if (isGeminiDailyExhausted) {
+    const res = await fallbackToGroq(null, [card]);
+    return res[0] || { error: 'groq_fallback_failed' };
+  }
+
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `You are a data structurer for an opportunities board. Extract the required fields from the following unstructured text into a precise JSON object.
 
@@ -42,41 +47,34 @@ ${card.source_url}
 RAW TEXT:
 ${card.raw_text}`;
 
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text().trim();
-
-  // Strip markdown formatting if Gemini included it despite instructions
-  const jsonStr = responseText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '');
-  
   try {
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text().trim();
+
+    const jsonStr = responseText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '');
     const parsed = JSON.parse(jsonStr);
     
-    // Basic validation
     if (parsed.deadline) {
       const deadlineDate = new Date(parsed.deadline);
       const now = new Date();
       const oneYearFromNow = new Date();
       oneYearFromNow.setFullYear(now.getFullYear() + 1);
 
-      if (deadlineDate < now) {
-        return { error: 'stale_opportunity' };
-      }
-      if (deadlineDate > oneYearFromNow) {
-        return { error: 'deadline_out_of_range' };
-      }
-      
-      const year = deadlineDate.getFullYear();
-      if (year < 2025) {
-        return { error: `invalid_date_year_before_2025: ${parsed.deadline}` };
-      }
+      if (deadlineDate < now) return { error: 'stale_opportunity' };
+      if (deadlineDate > oneYearFromNow) return { error: 'deadline_out_of_range' };
+      if (deadlineDate.getFullYear() < 2025) return { error: `invalid_date_year_before_2025: ${parsed.deadline}` };
     }
 
-    // Pass through the deadline_confidence from the scraper
     parsed.deadline_confidence = card.deadline_confidence;
-    
     return parsed;
   } catch (err) {
-    console.warn(`Failed to parse Gemini response as JSON: ${jsonStr}`);
+    if (err.message && err.message.includes('429')) {
+      isGeminiDailyExhausted = true;
+      console.warn('[Gemini API] 429 Quota limit hit in structureData. Tripping circuit breaker to Groq.');
+      const res = await fallbackToGroq(prompt, [card]);
+      return res[0] || { error: 'groq_fallback_failed' };
+    }
+    console.warn(`Failed to parse Gemini response as JSON: ${err.message}`);
     return { error: 'malformed_json' };
   }
 }
@@ -98,7 +96,7 @@ async function structureDataBatch(cards) {
   }
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   // Map input to a clean array to prevent token bloat
   const inputData = cards.map((c, i) => ({

@@ -116,15 +116,15 @@ export default function OnboardingPage() {
       </div>
 
       <div className="z-10 relative">
-        <div className="flex items-center gap-2 justify-center mb-8">
-          <div className="w-10 h-10 rounded-full bg-surface-low border border-primary/50 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,136,0.3)]">
-            <Compass size={20} className="text-primary" />
+        <div className="flex items-center gap-2.5 justify-center mb-8">
+          <div className="w-[34px] h-[34px] rounded-[10px] bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-[0_0_14px_rgba(34,197,94,0.26)]">
+            <Compass size={16} className="text-background" strokeWidth={2.5} />
           </div>
-          <span className="font-black text-2xl tracking-tighter">Opp<span className="text-primary">Hub</span></span>
+          <span className="font-black text-[20px] tracking-tight">Opp<span className="text-primary">Hub</span></span>
         </div>
 
-        <div className="bg-surface-low/80 backdrop-blur-xl border border-surface-high/50 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+        <div className="bg-surface-low/80 backdrop-blur-xl border border-surface-high/30 rounded-[24px] p-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
           
           <div className="mb-8">
             <h1 className="text-2xl font-black mb-2">Developer Identity</h1>
@@ -141,17 +141,17 @@ export default function OnboardingPage() {
             
             {/* MANDATORY FIELDS */}
             <div className="space-y-6">
-              <h3 className="text-xs font-bold text-primary uppercase tracking-widest border-b border-surface-high pb-2">Mandatory Fields</h3>
+              <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.12em] border-b border-surface-high/50 pb-2">Mandatory Fields</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2 md:col-span-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Full Name</label>
-                  <input type="text" name="full_name" required placeholder="John Doe" className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:border-primary outline-none" />
+                  <input type="text" name="full_name" required placeholder="John Doe" className="bg-surface-lowest border border-surface-high/50 rounded-[10px] px-4 py-[10px] text-[13px] text-text-main focus:border-primary focus:ring-2 focus:ring-primary/12 outline-none transition-all" />
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">College Tier</label>
-                  <select name="college_tier" required className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:border-primary outline-none appearance-none">
+                  <select name="college_tier" required className="bg-surface-lowest border border-surface-high/50 rounded-[10px] px-4 py-[10px] text-[13px] text-text-main focus:border-primary focus:ring-2 focus:ring-primary/12 outline-none appearance-none transition-all">
                     <option value="">Select your tier...</option>
                     {COLLEGE_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -159,7 +159,7 @@ export default function OnboardingPage() {
 
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Current Year of Study</label>
-                  <select name="current_year" required className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:border-primary outline-none appearance-none">
+                  <select name="current_year" required className="bg-surface-lowest border border-surface-high/50 rounded-[10px] px-4 py-[10px] text-[13px] text-text-main focus:border-primary focus:ring-2 focus:ring-primary/12 outline-none appearance-none transition-all">
                     <option value="">Select current year...</option>
                     {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -167,7 +167,7 @@ export default function OnboardingPage() {
 
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Expected Graduation</label>
-                  <select name="graduation_year" required className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:border-primary outline-none appearance-none">
+                  <select name="graduation_year" required className="bg-surface-lowest border border-surface-high/50 rounded-[10px] px-4 py-[10px] text-[13px] text-text-main focus:border-primary focus:ring-2 focus:ring-primary/12 outline-none appearance-none transition-all">
                     <option value="">Select year...</option>
                     {GRAD_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -175,7 +175,7 @@ export default function OnboardingPage() {
 
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Location Preference</label>
-                  <select name="location_preference" required className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:border-primary outline-none appearance-none">
+                  <select name="location_preference" required className="bg-surface-lowest border border-surface-high/50 rounded-[10px] px-4 py-[10px] text-[13px] text-text-main focus:border-primary focus:ring-2 focus:ring-primary/12 outline-none appearance-none transition-all">
                     <option value="">Select location...</option>
                     {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
@@ -231,14 +231,14 @@ export default function OnboardingPage() {
 
             {/* OPTIONAL FIELDS */}
             <div className="space-y-6 mt-4">
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest border-b border-surface-high pb-2">
+              <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.12em] border-b border-surface-high/50 pb-2">
                 Optional (Recommended for Better Matching)
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Gender</label>
-                  <select name="gender" className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:border-primary outline-none appearance-none">
+                  <select name="gender" className="bg-surface-lowest border border-surface-high/50 rounded-[10px] px-4 py-[10px] text-[13px] text-text-main focus:border-primary focus:ring-2 focus:ring-primary/12 outline-none appearance-none transition-all">
                     <option value="">Optional: For diversity programs...</option>
                     {GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
@@ -246,7 +246,7 @@ export default function OnboardingPage() {
 
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Experience Level</label>
-                  <select name="experience_level" className="bg-surface-lowest border border-surface-high/50 rounded-lg px-4 py-3 text-sm text-text-main focus:border-primary outline-none appearance-none">
+                  <select name="experience_level" className="bg-surface-lowest border border-surface-high/50 rounded-[10px] px-4 py-[10px] text-[13px] text-text-main focus:border-primary focus:ring-2 focus:ring-primary/12 outline-none appearance-none transition-all">
                     <option value="">Optional: For seniority filtering...</option>
                     {EXP_LEVELS.map(e => <option key={e} value={e}>{e}</option>)}
                   </select>
@@ -254,10 +254,10 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={saving}
-              className="mt-6 w-full bg-primary text-[#002113] font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 hover:brightness-110 hover:shadow-[0_0_20px_rgba(78,222,99,0.4)] transition-all disabled:opacity-70 group"
+              className="mt-6 w-full bg-primary text-background font-black text-[15px] py-[13px] rounded-[12px] flex items-center justify-center gap-2 hover:brightness-105 hover:shadow-[0_4px_24px_rgba(34,197,94,0.32)] transition-all duration-200 disabled:opacity-60 group"
             >
               {saving ? "Saving Profile..." : "Complete Profile"}
               {!saving && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}

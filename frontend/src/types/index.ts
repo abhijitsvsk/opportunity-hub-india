@@ -8,6 +8,8 @@ export type Opportunity = {
   domain_tags: string[];
   effort_level: string;
   competitiveness: string;
+  eligibility?: any;
+  created_at?: string;
 };
 
 export type UserSavedStatus = {

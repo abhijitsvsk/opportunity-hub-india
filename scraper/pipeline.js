@@ -270,37 +270,58 @@ async function processPendingQueue(rateLimiter) {
    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
    
-   const { data: pending } = await supabase.from('pending_processing').select('*').order('created_at', { ascending: true }).limit(300);
-   
-   if (!pending || pending.length === 0) {
-      console.log('Pending queue is empty.');
-      return;
+   try {
+     const { data: pending } = await supabase.from('pending_processing').select('*').order('created_at', { ascending: true }).limit(300);
+     
+     if (!pending || pending.length === 0) {
+        console.log('Pending queue is empty.');
+     } else {
+        console.log(`Found ${pending.length} pending records in queue.`);
+        
+        for (const item of pending) {
+           if (!rateLimiter.canMakeCall()) {
+              console.warn('Rate limit hit while processing pending queue. Stopping queue processing.');
+              break;
+           }
+           
+           rateLimiter.increment();
+           console.log(`  Structuring pending record [ID: ${item.id}]`);
+           try {
+              const structured = await structureData(item.raw_data);
+              if (!structured.error) {
+                 await upsertData([structured], supabaseKey);
+              }
+              await supabase.from('pending_processing').delete().eq('id', item.id);
+           } catch (err) {
+              console.error('Failed to structure pending record:', err.message);
+              await supabase.from('pending_processing').delete().eq('id', item.id);
+           }
+           
+           await new Promise(r => setTimeout(r, 4000));
+        }
+     }
+   } catch (e) {
+     console.warn('Could not process remote pending queue:', e.message);
    }
-   
-   console.log(`Found ${pending.length} pending records in queue.`);
-   
-   for (const item of pending) {
-      if (!rateLimiter.canMakeCall()) {
-         console.warn('Rate limit hit while processing pending queue. Stopping queue processing.');
-         break;
-      }
-      
-      rateLimiter.increment();
-      console.log(`  Structuring pending record [ID: ${item.id}]`);
-      try {
-         const structured = await structureData(item.raw_data);
-         if (!structured.error) {
-            await upsertData([structured], supabaseKey);
+
+   // Process local failed-upserts.json if present
+   try {
+     const path = require('path');
+     const failedPath = path.join(__dirname, 'recon-output', 'failed-upserts.json');
+     if (fs.existsSync(failedPath)) {
+       console.log('Found local failed-upserts.json file. Retrying local cached upserts...');
+       const cached = JSON.parse(fs.readFileSync(failedPath, 'utf-8'));
+       if (Array.isArray(cached) && cached.length > 0) {
+         console.log(`Retrying upsert for ${cached.length} locally cached records...`);
+         const res = await upsertData(cached, supabaseKey);
+         if (res.successCount > 0) {
+           console.log(`Successfully restored ${res.successCount} cached records into Supabase!`);
+           fs.unlinkSync(failedPath); // remove cached file once processed
          }
-         // Delete from queue whether it succeeded or completely failed structureData
-         await supabase.from('pending_processing').delete().eq('id', item.id);
-      } catch (err) {
-         console.error('Failed to structure pending record:', err.message);
-         // Still delete it so it doesn't block forever
-         await supabase.from('pending_processing').delete().eq('id', item.id);
-      }
-      
-      await new Promise(r => setTimeout(r, 4000));
+       }
+     }
+   } catch (err) {
+     console.warn('Could not process local failed upserts cache:', err.message);
    }
 }
 

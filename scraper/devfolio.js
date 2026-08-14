@@ -246,10 +246,12 @@ async function scrapeDevfolio(options = {}) {
       let fullText = card.raw_text;
 
       try {
-        await detailPage.goto(card.source_url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        // Block images, fonts, and media to make page load 10x faster
+        await detailPage.route('**/*.{png,jpg,jpeg,gif,svg,css,woff,woff2,mp4}', route => route.abort());
+        await detailPage.goto(card.source_url, { waitUntil: 'domcontentloaded', timeout: 12000 });
         
         // Wait a short bit for React to render countdowns
-        await detailPage.waitForTimeout(6000);
+        await detailPage.waitForTimeout(3000);
 
         const pageData = await detailPage.evaluate(() => {
           const bodyText = document.body.innerText;
