@@ -36,7 +36,7 @@ export default async function LoginPage(
   };
 
   return (
-    <div className="bg-background text-text-main min-h-screen grid md:grid-cols-[2fr_3fr] font-sans overflow-hidden">
+    <div className="bg-background text-text-main min-h-screen grid md:grid-cols-[2fr_3fr] font-sans overflow-y-auto pb-[env(safe-area-inset-bottom,0px)]">
 
       {/* ── Left decorative panel ── */}
       <div className="hidden md:flex flex-col items-center justify-center relative overflow-hidden border-r border-surface-high/20 p-12">
@@ -79,13 +79,13 @@ export default async function LoginPage(
       </div>
 
       {/* ── Right — Auth form ── */}
-      <div className="flex items-center justify-center px-6 py-10 md:py-0 relative">
+      <div className="flex items-center justify-center px-5 sm:px-6 py-10 md:py-0 relative">
         {/* Mobile: faint bg blob */}
         <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-primary/8 blur-[120px] pointer-events-none md:hidden" />
 
         <div className="w-full max-w-[380px] relative z-10">
           {/* Mobile logo */}
-          <div className="flex items-center gap-2 mb-8 md:hidden">
+          <div className="flex items-center gap-2 mb-6 sm:mb-8 md:hidden">
             <div className="w-[28px] h-[28px] rounded-[8px] bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"/>
@@ -95,8 +95,8 @@ export default async function LoginPage(
             <span className="font-black text-[16px] tracking-tight">Opp<span className="text-primary">Hub</span></span>
           </div>
 
-          <h2 className="text-[24px] font-black tracking-tight mb-1">Welcome back</h2>
-          <p className="text-[13px] text-text-muted mb-7">Sign in to your account to continue</p>
+          <h2 className="text-[22px] sm:text-[24px] font-black tracking-tight mb-1">Welcome back</h2>
+          <p className="text-[13px] text-text-muted mb-6 sm:mb-7">Sign in to your account to continue</p>
 
           {/* Error message */}
           {searchParams?.error && (
@@ -110,7 +110,7 @@ export default async function LoginPage(
           <form action={signInWithGithub} className="mb-5">
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-3 py-[11px] px-4 rounded-[10px] bg-surface-high border border-surface-highest hover:bg-surface-highest hover:border-text-muted/40 transition-all duration-200 font-semibold text-[13px] group"
+              className="w-full flex items-center justify-center gap-3 py-[12px] px-4 rounded-[12px] bg-surface-high border border-surface-highest hover:bg-surface-highest hover:border-text-muted/40 transition-all duration-200 font-semibold text-[13.5px] active:scale-[0.98] group"
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" className="group-hover:text-text-main transition-colors">
                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
@@ -128,7 +128,7 @@ export default async function LoginPage(
 
           {/* Sign In form */}
           <form action={signIn} className="flex flex-col gap-[14px] mb-4">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label htmlFor="email-signin" className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted">
                 Email Address
               </label>
@@ -138,11 +138,11 @@ export default async function LoginPage(
                 type="email"
                 placeholder="developer@future.com"
                 required
-                className="bg-surface-low border border-surface-high/60 rounded-[10px] px-[13px] py-[10px] text-[13px] text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/12 transition-all duration-200"
+                className="bg-surface-low border border-surface-high/60 rounded-[10px] px-3.5 py-[11px] text-[16px] md:text-[13px] text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/12 transition-all duration-200"
               />
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label htmlFor="password-signin" className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted">
                 Password
               </label>
@@ -152,13 +152,13 @@ export default async function LoginPage(
                 type="password"
                 placeholder="••••••••"
                 required
-                className="bg-surface-low border border-surface-high/60 rounded-[10px] px-[13px] py-[10px] text-[13px] text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/12 transition-all duration-200"
+                className="bg-surface-low border border-surface-high/60 rounded-[10px] px-3.5 py-[11px] text-[16px] md:text-[13px] text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/12 transition-all duration-200"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-primary text-background font-bold text-[14px] rounded-[10px] py-[11px] hover:brightness-105 hover:shadow-[0_4px_20px_rgba(34,197,94,0.28)] transition-all duration-200"
+              className="w-full bg-primary text-background font-bold text-[14px] rounded-[10px] py-[12px] hover:brightness-105 active:scale-[0.98] transition-all duration-200 mt-1"
             >
               Sign In →
             </button>
@@ -173,7 +173,7 @@ export default async function LoginPage(
 
           {/* Sign Up form */}
           <form action={signUp} className="flex flex-col gap-[14px]">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label htmlFor="email-signup" className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted">
                 Email Address
               </label>
@@ -183,11 +183,11 @@ export default async function LoginPage(
                 type="email"
                 placeholder="new-developer@future.com"
                 required
-                className="bg-surface-low border border-surface-high/60 rounded-[10px] px-[13px] py-[10px] text-[13px] text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/12 transition-all duration-200"
+                className="bg-surface-low border border-surface-high/60 rounded-[10px] px-3.5 py-[11px] text-[16px] md:text-[13px] text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/12 transition-all duration-200"
               />
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label htmlFor="password-signup" className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-muted">
                 Password
               </label>
@@ -197,13 +197,13 @@ export default async function LoginPage(
                 type="password"
                 placeholder="••••••••"
                 required
-                className="bg-surface-low border border-surface-high/60 rounded-[10px] px-[13px] py-[10px] text-[13px] text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/12 transition-all duration-200"
+                className="bg-surface-low border border-surface-high/60 rounded-[10px] px-3.5 py-[11px] text-[16px] md:text-[13px] text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/12 transition-all duration-200"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-transparent border border-primary/40 text-primary font-semibold text-[13px] rounded-[10px] py-[10px] hover:bg-primary/8 transition-all duration-200"
+              className="w-full bg-transparent border border-primary/40 text-primary font-semibold text-[13.5px] rounded-[10px] py-[11px] hover:bg-primary/8 active:scale-[0.98] transition-all duration-200 mt-1"
             >
               Create Account
             </button>

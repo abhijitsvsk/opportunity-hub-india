@@ -29,6 +29,10 @@
 :root {
   background-color: var(--color-background);
   color: var(--color-text-main);
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 html, body {
@@ -38,11 +42,14 @@ html, body {
   color: var(--color-text-main);
   overflow-x: hidden;
   width: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
-body {
-  /* Prevent main body scroll — snap container handles it */
-  overflow-y: hidden;
+/* On mobile, prevent iOS form zoom while maintaining crisp desktop type */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* ── Snap scroll container ── */
@@ -53,6 +60,7 @@ body {
   height: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
   &::-webkit-scrollbar { display: none; }
 }
 
@@ -133,10 +141,11 @@ body {
 }
 
 /* ════════════════════════════════
-   MOBILE — bottom nav padding
+   MOBILE HELPERS & SAFE AREAS
 ════════════════════════════════ */
 @media (max-width: 767px) {
   .mobile-content-pad {
-    padding-bottom: 64px;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }
 }
+

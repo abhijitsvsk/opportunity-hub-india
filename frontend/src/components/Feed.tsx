@@ -291,8 +291,8 @@ export default function Feed({
       <main className="flex-1 flex flex-col relative overflow-hidden">
 
         {/* ── Header ── */}
-        <header className="h-14 shrink-0 flex items-center justify-between px-4 md:px-5 relative z-50 border-b border-surface-high/20">
-          <div className="flex items-center gap-3">
+        <header className="h-14 shrink-0 flex items-center justify-between px-3 sm:px-5 relative z-50 border-b border-surface-high/20">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Mobile logo */}
             <div className="flex md:hidden items-center gap-2">
               <div className="w-[28px] h-[28px] rounded-[8px] bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
@@ -306,17 +306,17 @@ export default function Feed({
               <div className="relative">
                 <button
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-[10px] bg-surface-low border border-surface-high/40 text-[12px] font-semibold text-text-main hover:bg-surface-high transition-all active:scale-95"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-[10px] bg-surface-low border border-surface-high/40 text-[11.5px] sm:text-[12px] font-semibold text-text-main hover:bg-surface-high transition-all active:scale-95"
                 >
                   <Filter size={13} className={activeFilterCount > 0 ? "text-primary" : "text-text-muted"} />
-                  <span className="hidden sm:inline">Filters</span>
+                  <span className="hidden xs:inline sm:inline">Filters</span>
                   {activeFilterCount > 0 && (
-                    <span className="bg-primary text-background w-[17px] h-[17px] rounded-full flex items-center justify-center text-[9px] font-black">
+                    <span className="bg-primary text-background w-[16px] h-[16px] rounded-full flex items-center justify-center text-[9px] font-black">
                       {activeFilterCount}
                     </span>
                   )}
                   <ChevronDown
-                    size={13}
+                    size={12}
                     className={`transition-transform text-text-muted ${isFilterOpen ? "rotate-180" : ""}`}
                   />
                 </button>
@@ -324,12 +324,12 @@ export default function Feed({
                 {isFilterOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsFilterOpen(false)} />
-                    <div className="absolute top-full left-0 mt-2 w-56 bg-surface-low border border-surface-high/40 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-0.5 z-50 max-h-[60vh] overflow-y-auto hide-scrollbar animate-fadeIn">
+                    <div className="absolute top-full left-0 mt-2 w-60 max-w-[85vw] bg-surface-low border border-surface-high/50 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-0.5 z-50 max-h-[60vh] overflow-y-auto hide-scrollbar animate-fadeIn">
                       {/* Clear filters button */}
                       {!activeFilters.has("All") && activeFilters.size > 0 && (
                         <button
                           onClick={() => { handleFilterChange("All"); setIsFilterOpen(false); }}
-                          className="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-bold bg-error/8 text-error hover:bg-error/15 transition-all text-left mb-1"
+                          className="flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-bold bg-error/10 text-error hover:bg-error/15 transition-all text-left mb-1"
                         >
                           Clear All Filters
                           <span>✕</span>
@@ -344,7 +344,7 @@ export default function Feed({
                               handleFilterChange(filter.id);
                               if (filter.id === "All") setIsFilterOpen(false);
                             }}
-                            className={`flex items-center justify-between px-3 py-[9px] rounded-xl text-[12px] font-semibold transition-all text-left
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl text-[12px] font-semibold transition-all text-left
                               ${isActive
                                 ? 'bg-primary/10 text-primary'
                                 : 'text-text-muted hover:text-text-main hover:bg-surface-high/50'
@@ -367,26 +367,26 @@ export default function Feed({
 
           {/* Error toast */}
           {actionError && (
-            <div className="absolute left-1/2 -translate-x-1/2 top-3 bg-error text-background px-4 py-2 rounded-full font-bold text-[11px] pointer-events-auto shadow-2xl animate-fadeIn flex items-center gap-2">
+            <div className="absolute left-1/2 -translate-x-1/2 top-3 bg-error text-background px-4 py-2 rounded-full font-bold text-[11px] pointer-events-auto shadow-2xl animate-fadeIn flex items-center gap-2 z-50">
               {actionError}
               <button onClick={() => setActionError(null)} className="bg-background/20 px-1.5 py-0.5 rounded-full hover:bg-background/40 text-[10px]">✕</button>
             </div>
           )}
 
-          <div className="flex items-center gap-3 pointer-events-auto">
+          <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto">
             {/* Real-time saved count */}
-            <div className="bg-surface-low px-3 py-[6px] rounded-full flex items-center gap-2 border border-surface-high/40" title="Your saved opportunities">
-              <Bookmark size={13} className={optimisticSaved.size > 0 ? "text-primary fill-primary" : "text-text-muted"} />
-              <span className="font-bold text-[11px] tracking-wide text-text-muted">
+            <div className="bg-surface-low px-2.5 sm:px-3 py-[5px] sm:py-[6px] rounded-full flex items-center gap-1.5 sm:gap-2 border border-surface-high/40" title="Your saved opportunities">
+              <Bookmark size={12} className={optimisticSaved.size > 0 ? "text-primary fill-primary" : "text-text-muted"} />
+              <span className="font-bold text-[10px] sm:text-[11px] tracking-wide text-text-muted">
                 SAVED: <span className="text-text-main font-mono">{optimisticSaved.size}</span>
               </span>
             </div>
             <Link
               href="/onboarding"
-              className="w-9 h-9 rounded-full bg-surface-low border border-surface-high/40 flex items-center justify-center hover:bg-surface-high transition-colors text-text-muted hover:text-text-main overflow-hidden"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-surface-low border border-surface-high/40 flex items-center justify-center hover:bg-surface-high transition-colors text-text-muted hover:text-text-main overflow-hidden"
               title="Profile & Preferences"
             >
-              <User size={17} strokeWidth={2} />
+              <User size={15} strokeWidth={2} />
             </Link>
           </div>
         </header>
@@ -404,8 +404,8 @@ export default function Feed({
           >
             {/* Empty state */}
             {fullyFilteredOpps.length === 0 && !isFetching && (
-              <div className="w-full h-full flex flex-col items-center justify-center text-text-muted gap-4">
-                <Compass size={44} className="opacity-20" />
+              <div className="w-full h-full flex flex-col items-center justify-center text-text-muted gap-4 px-6">
+                <Compass size={40} className="opacity-20" />
                 <p className="max-w-xs text-center leading-relaxed text-[13px]">{getEmptyStateMessage()}</p>
               </div>
             )}
@@ -418,7 +418,7 @@ export default function Feed({
                 <section
                   key={card.id}
                   ref={index === fullyFilteredOpps.length - 5 ? triggerRef : undefined}
-                  className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-5 px-4 md:px-0 relative"
+                  className="snap-item w-full h-full flex flex-row items-center justify-center gap-2 sm:gap-3 xl:gap-4 py-2 sm:py-5 px-2 sm:px-4 md:px-0 relative"
                 >
                   <OpportunityCard
                     card={card}
@@ -445,8 +445,8 @@ export default function Feed({
             )}
           </div>
 
-          {/* Up/Down navigation arrows */}
-          <div className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 flex flex-col gap-2.5 z-50 pointer-events-auto">
+          {/* Up/Down navigation arrows (Desktop only) */}
+          <div className="hidden md:flex absolute right-4 md:right-6 top-1/2 -translate-y-1/2 flex-col gap-2.5 z-50 pointer-events-auto">
             <button
               onClick={() => scrollByCard('up')}
               className="w-9 h-9 rounded-[10px] bg-surface-low border border-surface-high/40 flex items-center justify-center hover:bg-surface-high hover:scale-110 transition-all text-text-muted hover:text-text-main shadow-lg"
@@ -464,33 +464,33 @@ export default function Feed({
       </main>
 
       {/* ── Mobile bottom nav ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-lowest/95 backdrop-blur-xl border-t border-surface-high/20 flex items-center justify-around z-50 px-4">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-lowest/95 backdrop-blur-2xl border-t border-surface-high/30 flex items-center justify-around z-50 px-4 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-8px_24px_rgba(0,0,0,0.4)]">
         <button
           onClick={() => setActiveTab("discover")}
-          className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all ${
-            activeTab === "discover" ? "text-primary" : "text-text-muted"
+          className={`flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all active:scale-95 ${
+            activeTab === "discover" ? "text-primary font-bold" : "text-text-muted"
           }`}
         >
-          <Compass size={22} strokeWidth={activeTab === "discover" ? 2.5 : 2} />
-          <span className="text-[10px] font-semibold">Discover</span>
+          <Compass size={20} strokeWidth={activeTab === "discover" ? 2.5 : 2} />
+          <span className="text-[10px]">Discover</span>
         </button>
 
         <button
           onClick={() => setActiveTab("saved")}
-          className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all ${
-            activeTab === "saved" ? "text-primary" : "text-text-muted"
+          className={`flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all active:scale-95 ${
+            activeTab === "saved" ? "text-primary font-bold" : "text-text-muted"
           }`}
         >
-          <Bookmark size={22} strokeWidth={activeTab === "saved" ? 2.5 : 2} />
-          <span className="text-[10px] font-semibold">Saved</span>
+          <Bookmark size={20} strokeWidth={activeTab === "saved" ? 2.5 : 2} />
+          <span className="text-[10px]">Saved</span>
         </button>
 
         <Link
           href="/onboarding"
-          className="flex flex-col items-center gap-1 px-4 py-1 rounded-xl text-text-muted hover:text-text-main transition-all"
+          className="flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-text-muted hover:text-text-main transition-all active:scale-95"
         >
-          <User size={22} strokeWidth={2} />
-          <span className="text-[10px] font-semibold">Profile</span>
+          <User size={20} strokeWidth={2} />
+          <span className="text-[10px]">Profile</span>
         </Link>
       </nav>
     </div>
@@ -499,37 +499,37 @@ export default function Feed({
 
 function OpportunitySkeleton() {
   return (
-    <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-3 xl:gap-4 py-5 px-4 md:px-0 relative">
+    <section className="snap-item w-full h-full flex flex-row items-center justify-center gap-2 sm:gap-3 xl:gap-4 py-2 sm:py-5 px-2 sm:px-4 md:px-0 relative">
       <div
-        className="relative rounded-[2.5rem] bg-surface-low overflow-hidden border border-surface-high/20 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] h-[var(--card-size)] w-[calc(var(--card-size)*0.7)]"
+        className="relative rounded-[2rem] sm:rounded-[2.5rem] bg-surface-low overflow-hidden border border-surface-high/20 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] shadow-2xl w-[calc(100vw-76px)] max-w-[370px] md:w-[calc(var(--card-size)*0.7)] h-[clamp(440px,76dvh,680px)] md:h-[var(--card-size)]"
         style={{ '--card-size': 'min(82dvh, calc((100vw - var(--sidebar-width) - 80px) / 0.7))' } as React.CSSProperties}
       >
         {/* Top row */}
-        <div className="p-5 flex justify-between items-start">
+        <div className="px-4 pt-5 pb-2 sm:px-6 sm:pt-6 flex justify-between items-start">
           <div className="flex flex-col gap-2">
             <div className="w-20 h-5 animate-shimmer rounded-lg" />
-            <div className="w-28 h-6 animate-shimmer rounded-full" />
+            <div className="w-24 h-5 animate-shimmer rounded-full" />
           </div>
-          <div className="w-14 h-14 animate-shimmer rounded-full" />
+          <div className="w-14 h-10 animate-shimmer rounded-lg" />
         </div>
 
         {/* Middle */}
-        <div className="min-h-0 flex flex-col items-center justify-center gap-4 p-5">
+        <div className="min-h-0 flex flex-col items-center justify-center gap-3 p-4 sm:p-5">
           <div className="w-12 h-12 animate-shimmer rounded-[14px]" />
-          <div className="w-3/4 h-7 animate-shimmer rounded-lg" />
+          <div className="w-3/4 h-6 animate-shimmer rounded-lg" />
           <div className="w-1/2 h-4 animate-shimmer rounded-lg" />
           <div className="flex gap-2">
-            <div className="w-14 h-6 animate-shimmer rounded-lg" />
-            <div className="w-14 h-6 animate-shimmer rounded-lg" />
-            <div className="w-14 h-6 animate-shimmer rounded-lg" />
+            <div className="w-14 h-5 animate-shimmer rounded-lg" />
+            <div className="w-14 h-5 animate-shimmer rounded-lg" />
           </div>
         </div>
 
         {/* Bottom */}
-        <div className="p-5">
-          <div className="w-full h-12 animate-shimmer rounded-xl" />
+        <div className="px-4 pb-4 sm:px-6 sm:pb-5">
+          <div className="w-full h-11 animate-shimmer rounded-xl" />
         </div>
       </div>
     </section>
   );
 }
+

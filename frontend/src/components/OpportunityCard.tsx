@@ -142,88 +142,88 @@ export default function OpportunityCard({
   const matchColor =
     matchScore >= 80 ? "bg-primary" : matchScore >= 60 ? "bg-warning" : "bg-error";
 
-  const { displayTags, remainingCount } = cleanDomainTags(card.domain_tags, 4);
+  const { displayTags, remainingCount } = cleanDomainTags(card.domain_tags, 3);
 
   return (
     <>
       {/* ── THE CARD ── */}
       <div
-        className="relative rounded-[2.5rem] bg-surface-low overflow-hidden border border-surface-high/20 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] shadow-2xl h-[var(--card-size)] w-[calc(var(--card-size)*0.7)]"
+        className="relative rounded-[2rem] sm:rounded-[2.5rem] bg-surface-low overflow-hidden border border-surface-high/30 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] shadow-2xl w-[calc(100vw-76px)] max-w-[370px] md:w-[calc(var(--card-size)*0.7)] h-[clamp(440px,76dvh,680px)] md:h-[var(--card-size)]"
         style={{ '--card-size': 'min(82dvh, calc((100vw - var(--sidebar-width) - 80px) / 0.7))' } as React.CSSProperties}
       >
         {/* Inner top-left glow */}
-        <div className="absolute top-0 left-0 w-[75%] h-[45%] bg-gradient-to-br from-primary/6 via-primary/4 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-0 w-[80%] h-[45%] bg-gradient-to-br from-primary/8 via-primary/4 to-transparent blur-3xl pointer-events-none" />
 
         {/* ── TOP SECTION ── */}
-        <div className="p-[clamp(1.1rem,2.2dvh,1.75rem)] flex justify-between items-start z-20 relative pt-7">
-          <div className="flex flex-col gap-2.5">
+        <div className="px-4 pt-5 pb-2 sm:px-6 sm:pt-6 sm:pb-3 flex justify-between items-start z-20 relative">
+          <div className="flex flex-col gap-2">
             {/* Deadline badge */}
             {!isMounted ? (
-              <div className="h-6 w-20 bg-surface-high/50 rounded-md animate-shimmer" />
+              <div className="h-5 w-18 bg-surface-high/50 rounded-md animate-shimmer" />
             ) : closingSoon ? (
-              <span className="inline-flex items-center gap-1.5 text-error font-bold text-[9px] tracking-[0.09em] uppercase border border-error/25 bg-error/8 px-2.5 py-[5px] rounded-[7px] self-start">
+              <span className="inline-flex items-center gap-1.5 text-error font-bold text-[9px] tracking-[0.08em] uppercase border border-error/25 bg-error/10 px-2.5 py-[4px] rounded-[6px] self-start">
                 <span className="w-[5px] h-[5px] rounded-full bg-error animate-pulse" />
                 {diffDays === 0 ? 'ENDS TODAY' : `ENDS IN ${diffDays}D`}
               </span>
             ) : diffDays > 0 ? (
-              <span className="inline-flex items-center gap-1.5 text-text-muted font-bold text-[9px] tracking-[0.09em] uppercase border border-surface-high bg-surface-high/40 px-2.5 py-[5px] rounded-[7px] self-start">
+              <span className="inline-flex items-center gap-1.5 text-text-muted font-bold text-[9px] tracking-[0.08em] uppercase border border-surface-high bg-surface-high/40 px-2.5 py-[4px] rounded-[6px] self-start">
                 ENDS IN {diffDays}D
               </span>
             ) : null}
 
             {/* Type badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-[5px] rounded-full bg-surface-high border border-surface-highest/60 text-[10px] font-bold tracking-[0.07em] text-text-main uppercase self-start">
-              <span className="w-[6px] h-[6px] rounded-full bg-primary shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-[4px] rounded-full bg-surface-high border border-surface-highest/60 text-[9.5px] font-bold tracking-[0.06em] text-text-main uppercase self-start">
+              <span className="w-[5px] h-[5px] rounded-full bg-primary shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
               {card.type}
             </div>
           </div>
 
           {/* Match score — horizontal bar (top-right) */}
-          <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2 min-w-[72px]">
+          <div className="flex flex-col items-end gap-1 shrink-0 ml-2 min-w-[64px] sm:min-w-[72px]">
             <div className="flex items-baseline gap-1">
-              <span className="text-[18px] font-black text-text-main leading-none">{matchScore}%</span>
-              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">match</span>
+              <span className="text-[16px] sm:text-[18px] font-black text-text-main leading-none">{matchScore}%</span>
+              <span className="text-[8.5px] sm:text-[9px] font-bold text-text-muted uppercase tracking-wider">match</span>
             </div>
-            <div className="w-[72px] h-[5px] bg-surface-highest rounded-full overflow-hidden">
+            <div className="w-[64px] sm:w-[72px] h-[4.5px] bg-surface-highest rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full ${matchColor} transition-all duration-700`}
                 style={{ width: matchBarWidth }}
               />
             </div>
-            <span className="text-[9px] text-text-muted font-medium">for your profile</span>
+            <span className="text-[8.5px] sm:text-[9px] text-text-muted font-medium">for you</span>
           </div>
         </div>
 
         {/* ── MIDDLE — scrollable content ── */}
-        <div className="min-h-0 flex flex-col items-center justify-center p-[clamp(1rem,2dvh,1.75rem)] landscape:p-4 pt-0 z-10 overflow-y-auto hide-scrollbar text-center">
+        <div className="min-h-0 flex flex-col items-center justify-center px-4 py-2 sm:px-6 sm:py-4 z-10 overflow-y-auto hide-scrollbar text-center">
           {/* Company icon */}
-          <div className="w-[clamp(2.75rem,5.5dvh,3.75rem)] h-[clamp(2.75rem,5.5dvh,3.75rem)] shrink-0 rounded-[14px] bg-gradient-to-br from-surface-high to-surface-highest border border-primary/15 mb-[clamp(0.8rem,2.2dvh,1.2rem)] flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.2)]">
-            <Compass size={24} className="text-primary" />
+          <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-[12px] sm:rounded-[14px] bg-gradient-to-br from-surface-high to-surface-highest border border-primary/15 mb-2.5 sm:mb-4 flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.25)]">
+            <Compass size={22} className="text-primary" />
           </div>
 
-          <h2 className="text-[clamp(1.1rem,2.6dvh,1.75rem)] font-bold leading-[1.25] tracking-tight text-text-main line-clamp-2 pb-1 shrink-0">
+          <h2 className="text-[15px] sm:text-[18px] font-bold leading-[1.3] tracking-tight text-text-main line-clamp-2 pb-0.5 shrink-0 px-1">
             {card.title}
           </h2>
 
           {card.description && (
-            <p className="text-[clamp(0.8rem,1.4dvh,1.05rem)] text-text-muted line-clamp-3 leading-relaxed max-w-[92%] mt-[clamp(0.3rem,1dvh,0.8rem)] font-medium shrink-0 landscape:hidden">
+            <p className="text-[11.5px] sm:text-[13px] text-text-muted line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-[95%] mt-1.5 sm:mt-2.5 font-medium shrink-0">
               {card.description}
             </p>
           )}
 
           {/* Sanitized domain tags */}
           {displayTags.length > 0 && (
-            <div className="flex flex-wrap justify-center items-center gap-[6px] mt-5 max-w-[95%]">
+            <div className="flex flex-wrap justify-center items-center gap-[5px] sm:gap-[6px] mt-3 sm:mt-4 max-w-[96%]">
               {displayTags.map(tag => (
                 <span
                   key={tag}
-                  className="px-3 py-[4px] bg-surface-high/50 rounded-[7px] text-[10px] font-semibold tracking-wide text-text-muted border border-surface-highest/60 font-mono"
+                  className="px-2.5 py-[3px] sm:px-3 sm:py-[4px] bg-surface-high/60 rounded-[6px] text-[9.5px] sm:text-[10px] font-semibold tracking-wide text-text-muted border border-surface-highest/60 font-mono"
                 >
                   {tag}
                 </span>
               ))}
               {remainingCount > 0 && (
-                <span className="px-2.5 py-[4px] bg-primary/10 text-primary rounded-[7px] text-[10px] font-bold border border-primary/20">
+                <span className="px-2 py-[3px] sm:px-2.5 sm:py-[4px] bg-primary/10 text-primary rounded-[6px] text-[9.5px] sm:text-[10px] font-bold border border-primary/20">
                   +{remainingCount} more
                 </span>
               )}
@@ -232,16 +232,16 @@ export default function OpportunityCard({
         </div>
 
         {/* ── BOTTOM SECTION ── */}
-        <div className="p-[clamp(1rem,2dvh,1.75rem)] z-20 shrink-0 bg-gradient-to-t from-surface-low via-surface-low/96 to-transparent pt-[clamp(0.4rem,1.2dvh,0.9rem)]">
+        <div className="px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3 z-20 shrink-0 bg-gradient-to-t from-surface-low via-surface-low/96 to-transparent">
           {/* Stats row */}
-          <div className="flex justify-between items-center px-1 mb-4">
+          <div className="flex justify-between items-center px-1 mb-3">
             <div className="flex flex-col items-start gap-0.5">
-              <span className="text-[9px] font-bold tracking-[0.1em] text-text-muted uppercase">Competitiveness</span>
-              <span className="text-[12px] font-bold text-primary capitalize">{card.competitiveness || "High"}</span>
+              <span className="text-[8.5px] sm:text-[9px] font-bold tracking-[0.09em] text-text-muted uppercase">Competitiveness</span>
+              <span className="text-[11px] sm:text-[12px] font-bold text-primary capitalize">{card.competitiveness || "High"}</span>
             </div>
             <div className="flex flex-col items-end gap-0.5">
-              <span className="text-[9px] font-bold tracking-[0.1em] text-text-muted uppercase">Effort Level</span>
-              <span className="text-[12px] font-bold text-text-main capitalize">{card.effort_level || "Medium"}</span>
+              <span className="text-[8.5px] sm:text-[9px] font-bold tracking-[0.09em] text-text-muted uppercase">Effort Level</span>
+              <span className="text-[11px] sm:text-[12px] font-bold text-text-main capitalize">{card.effort_level || "Medium"}</span>
             </div>
           </div>
 
@@ -250,7 +250,7 @@ export default function OpportunityCard({
             href={card.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full block text-center py-[13px] rounded-[14px] font-bold text-[14px] tracking-wide hover:brightness-105 transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(34,197,94,0.22)] hover:shadow-[0_8px_30px_rgba(34,197,94,0.38)]"
+            className="w-full block text-center py-[11px] sm:py-[13px] rounded-[12px] sm:rounded-[14px] font-bold text-[13.5px] sm:text-[14px] tracking-wide hover:brightness-105 transition-all active:scale-[0.97] shadow-[0_4px_18px_rgba(34,197,94,0.24)] hover:shadow-[0_8px_28px_rgba(34,197,94,0.36)]"
             style={{
               background: "linear-gradient(135deg, #22c55e 0%, #10b981 50%, #22c55e 100%)",
               backgroundSize: "200% auto",
@@ -263,16 +263,16 @@ export default function OpportunityCard({
       </div>
 
       {/* ── FLOATING ACTION PILL ── */}
-      <div className="flex flex-col items-center gap-1 z-30 bg-surface-low border border-surface-high/40 p-2.5 rounded-[18px] shadow-xl shrink-0">
+      <div className="flex flex-col items-center gap-1 z-30 bg-surface-low border border-surface-high/50 p-1.5 sm:p-2 rounded-[16px] sm:rounded-[18px] shadow-xl shrink-0">
 
         {/* Bookmark */}
         <button
           onClick={() => onBookmark(card.id, status)}
           title={isBookmarked ? "Remove bookmark" : "Bookmark"}
-          className="group/btn w-9 h-9 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
+          className="group/btn w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
         >
           <Bookmark
-            size={17}
+            size={18}
             strokeWidth={2}
             className={`transition-colors duration-150 ${
               isBookmarked ? "text-text-main fill-text-main" : "text-text-muted group-hover/btn:text-text-main"
@@ -286,9 +286,9 @@ export default function OpportunityCard({
         <button
           onClick={() => onShare(card.source_url)}
           title="Share"
-          className="group/btn w-9 h-9 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
+          className="group/btn w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
         >
-          <Share2 size={17} strokeWidth={2} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
+          <Share2 size={18} strokeWidth={2} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
         </button>
 
         <div className="w-5 h-px bg-surface-high/60" />
@@ -297,9 +297,9 @@ export default function OpportunityCard({
         <button
           onClick={onStar}
           title="Star"
-          className="group/btn w-9 h-9 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
+          className="group/btn w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
         >
-          <Star size={17} strokeWidth={2} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
+          <Star size={18} strokeWidth={2} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
         </button>
 
         {/* Status picker — shown when bookmarked */}
@@ -310,7 +310,7 @@ export default function OpportunityCard({
               <select
                 value={status}
                 onChange={(e) => onStatusChange(card.id, e.target.value)}
-                className="bg-surface-lowest text-text-main text-[9px] border border-surface-high/50 rounded-lg p-1 outline-none w-[52px] text-center appearance-none cursor-pointer focus:border-primary"
+                className="bg-surface-lowest text-text-main text-[9px] border border-surface-high/50 rounded-lg p-1 outline-none w-[48px] sm:w-[52px] text-center appearance-none cursor-pointer focus:border-primary"
               >
                 <option value="to_apply">Saved</option>
                 <option value="applied">Applied</option>
@@ -325,3 +325,4 @@ export default function OpportunityCard({
     </>
   );
 }
+
