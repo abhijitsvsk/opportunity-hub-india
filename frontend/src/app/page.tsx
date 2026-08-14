@@ -6,15 +6,22 @@ import { createClient } from "@/utils/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Opportunity Hub — Internships, Hackathons and Fellowships for CS Students",
-  description: "Stop missing deadlines. Discover and track the best tech internships, hackathons, and open-source programs ranked for your profile.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://opportunityhub.com'),
+  title: "Opportunity Hub — Internships, Hackathons & Fellowships for Indian CS Students 🇮🇳",
+  description: "Stop missing deadlines. Discover and track 2,000+ verified tech internships, hackathons, and open-source programs ranked for your profile.",
+  metadataBase: new URL('https://opportunity-hub-india.vercel.app'),
   openGraph: {
-    title: "Opportunity Hub — Internships, Hackathons and Fellowships for CS Students",
-    description: "Stop missing deadlines. Discover and track the best tech internships, hackathons, and open-source programs ranked for your profile.",
+    title: "Opportunity Hub — Tech Opportunities for Indian CS Students 🇮🇳",
+    description: "Discover and track 2,000+ verified internships, hackathons, and open-source programs ranked for your profile.",
+    url: "https://opportunity-hub-india.vercel.app",
+    siteName: "Opportunity Hub",
+    locale: "en_IN",
     type: "website",
-    images: ["/og-image.png"],
-  }
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Opportunity Hub — Tech Opportunities for Indian CS Students 🇮🇳",
+    description: "Discover and track 2,000+ verified internships, hackathons, and open-source programs ranked for your profile.",
+  },
 };
 
 function formatDeadline(deadlineStr: string | null | undefined): string {
