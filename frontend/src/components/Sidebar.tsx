@@ -1,6 +1,6 @@
 "use client";
 
-import { Terminal, Compass, Bookmark, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Compass, Bookmark, User, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { startTransition } from "react";
 import { signOut } from "@/app/actions";
@@ -67,19 +67,6 @@ export default function Sidebar({ activeTab, setActiveTab, isCollapsed, onToggle
       {/* Separator */}
       <div className="w-8 h-px bg-surface-high/50 mb-2" />
 
-      {/* Admin link */}
-      <div className="w-full px-2">
-        <Link
-          href="/admin"
-          title={isCollapsed ? "Admin" : undefined}
-          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-text-muted hover:text-text-main hover:bg-surface-high/60 transition-all duration-200 w-full
-            ${isCollapsed ? "justify-center" : "justify-start"}`}
-        >
-          <Terminal size={18} strokeWidth={2} className="shrink-0" />
-          {!isCollapsed && <span className="text-[13px] font-semibold">Admin</span>}
-        </Link>
-      </div>
-
       {/* Nav items */}
       <div className="w-full px-2">
         <NavBtn
@@ -96,6 +83,17 @@ export default function Sidebar({ activeTab, setActiveTab, isCollapsed, onToggle
           isActive={activeTab === "saved"}
           onClick={() => setActiveTab("saved")}
         />
+      </div>
+      <div className="w-full px-2">
+        <Link
+          href="/onboarding"
+          title={isCollapsed ? "Profile" : undefined}
+          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-text-muted hover:text-text-main hover:bg-surface-high/60 transition-all duration-200 w-full
+            ${isCollapsed ? "justify-center" : "justify-start"}`}
+        >
+          <User size={18} strokeWidth={2} className="shrink-0" />
+          {!isCollapsed && <span className="text-[13px] font-semibold">Profile</span>}
+        </Link>
       </div>
 
       {/* Spacer */}
