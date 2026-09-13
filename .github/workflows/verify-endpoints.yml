@@ -1,0 +1,37 @@
+name: Verify Endpoints from Datacenter IP
+
+on:
+  push:
+    paths:
+      - '.github/workflows/verify-endpoints.yml'
+  workflow_dispatch:
+
+jobs:
+  test-endpoints:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test HackerRank
+        id: hackerrank
+        run: |
+          echo "Testing HackerRank..."
+          RESP=$(curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerrank.com/rest/contests/upcoming?offset=0&limit=3")
+          echo "$RESP" | tail -n 10
+      - name: Test HackerEarth
+        id: hackerearth
+        run: |
+          echo "Testing HackerEarth..."
+          RESP=$(curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerearth.com/chrome-extension/events/")
+          echo "$RESP" | tail -n 5
+      - name: Test CodeChef
+        id: codechef
+        run: |
+          echo "Testing CodeChef..."
+          RESP=$(curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.codechef.com/api/list/contests/all?sort_by=START&sorting_order=asc&offset=0&mode=all")
+          echo "$RESP" | tail -n 5
+      - name: Test Codeforces
+        id: codeforces
+        run: |
+          echo "Testing Codeforces..."
+          RESP=$(curl -s -w "\nHTTP_CODE:%{http_code}" "https://codeforces.com/api/contest.list?gym=false")
+          echo "$RESP" | head -c 200
+          echo ""
