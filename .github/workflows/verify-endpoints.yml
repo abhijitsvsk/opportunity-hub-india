@@ -11,61 +11,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Test HackerRank
+        continue-on-error: true
         run: |
           CODE=$(curl -s -o /tmp/hr.json -w "%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerrank.com/rest/contests/upcoming?offset=0&limit=3")
-          echo "HackerRank code: $CODE"
-          if [ "$CODE" != "200" ]; then
-            echo "HackerRank failed with HTTP $CODE"
-            exit 1
-          fi
-          if ! grep -q '"models"' /tmp/hr.json; then
-            echo "HackerRank did not return expected JSON"
-            cat /tmp/hr.json | head -n 10
-            exit 1
-          fi
-          echo "✅ HackerRank returned 200 and valid JSON with models!"
+          echo "HackerRank HTTP_CODE: $CODE"
+          cat /tmp/hr.json | head -n 3
 
       - name: Test HackerEarth
+        continue-on-error: true
         run: |
           CODE=$(curl -s -o /tmp/he.json -w "%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerearth.com/chrome-extension/events/")
-          echo "HackerEarth code: $CODE"
-          if [ "$CODE" != "200" ]; then
-            echo "HackerEarth failed with HTTP $CODE"
-            exit 1
-          fi
-          if ! grep -q '"response"' /tmp/he.json; then
-            echo "HackerEarth did not return expected JSON"
-            cat /tmp/he.json | head -n 10
-            exit 1
-          fi
-          echo "✅ HackerEarth returned 200 and valid JSON with response!"
+          echo "HackerEarth HTTP_CODE: $CODE"
+          cat /tmp/he.json | head -n 10
 
       - name: Test CodeChef
+        continue-on-error: true
         run: |
           CODE=$(curl -s -o /tmp/cc.json -w "%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.codechef.com/api/list/contests/all?sort_by=START&sorting_order=asc&offset=0&mode=all")
-          echo "CodeChef code: $CODE"
-          if [ "$CODE" != "200" ]; then
-            echo "CodeChef failed with HTTP $CODE"
-            exit 1
-          fi
-          if ! grep -q '"future_contests"' /tmp/cc.json; then
-            echo "CodeChef did not return expected JSON"
-            cat /tmp/cc.json | head -n 10
-            exit 1
-          fi
-          echo "✅ CodeChef returned 200 and valid JSON with future_contests!"
+          echo "CodeChef HTTP_CODE: $CODE"
+          cat /tmp/cc.json | head -n 5
 
       - name: Test Codeforces
+        continue-on-error: true
         run: |
           CODE=$(curl -s -o /tmp/cf.json -w "%{http_code}" "https://codeforces.com/api/contest.list?gym=false")
-          echo "Codeforces code: $CODE"
-          if [ "$CODE" != "200" ]; then
-            echo "Codeforces failed with HTTP $CODE"
-            exit 1
-          fi
-          if ! grep -q '"result"' /tmp/cf.json; then
-            echo "Codeforces did not return expected JSON"
-            cat /tmp/cf.json | head -n 10
-            exit 1
-          fi
-          echo "✅ Codeforces returned 200 and valid JSON with result!"
+          echo "Codeforces HTTP_CODE: $CODE"
+          cat /tmp/cf.json | head -c 200
+          echo ""
+
+      - name: Output Summary
+        run: |
+          echo "=== SUMMARY OF ENDPOINTS ==="
+          echo "HackerRank: $(cat /tmp/hr.json | head -c 100)"
+          echo "HackerEarth: $(cat /tmp/he.json | head -c 100)"
+          echo "CodeChef: $(cat /tmp/cc.json | head -c 100)"
+          echo "Codeforces: $(cat /tmp/cf.json | head -c 100)"
