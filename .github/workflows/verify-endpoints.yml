@@ -6,41 +6,28 @@ on:
       - '.github/workflows/verify-endpoints.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   test-endpoints:
     runs-on: ubuntu-latest
     steps:
-      - name: Test HackerRank
-        continue-on-error: true
-        run: |
-          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerrank.com/rest/contests/upcoming?offset=0&limit=3" > /tmp/hr.txt
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Test HackerEarth
-        continue-on-error: true
-        run: |
-          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerearth.com/chrome-extension/events/" > /tmp/he.txt
-
-      - name: Test CodeChef
-        continue-on-error: true
-        run: |
-          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.codechef.com/api/list/contests/all?sort_by=START&sorting_order=asc&offset=0&mode=all" > /tmp/cc.txt
-
-      - name: Test Codeforces
-        continue-on-error: true
-        run: |
-          curl -s -w "\nHTTP_CODE:%{http_code}" "https://codeforces.com/api/contest.list?gym=false" > /tmp/cf.txt
-
-      - name: Save Results
+      - name: Test Endpoints
         run: |
           mkdir -p ./endpoint-results
-          cp /tmp/hr.txt ./endpoint-results/hackerrank.txt
-          cp /tmp/he.txt ./endpoint-results/hackerearth.txt
-          cp /tmp/cc.txt ./endpoint-results/codechef.txt
-          cp /tmp/cf.txt ./endpoint-results/codeforces.txt
+          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerrank.com/rest/contests/upcoming?offset=0&limit=3" > ./endpoint-results/hackerrank.txt
+          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerearth.com/chrome-extension/events/" > ./endpoint-results/hackerearth.txt
+          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.codechef.com/api/list/contests/all?sort_by=START&sorting_order=asc&offset=0&mode=all" > ./endpoint-results/codechef.txt
+          curl -s -w "\nHTTP_CODE:%{http_code}" "https://codeforces.com/api/contest.list?gym=false" > ./endpoint-results/codeforces.txt
 
-      - name: Upload endpoint results
-        uses: actions/upload-artifact@v4
-        with:
-          name: endpoint-results
-          path: ./endpoint-results/
-          retention-days: 1
+      - name: Commit and push results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ./endpoint-results
+          git commit -m "chore: save endpoint verification results from CI runner" || exit 0
+          git push
