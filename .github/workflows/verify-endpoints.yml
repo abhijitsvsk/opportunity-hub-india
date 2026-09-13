@@ -13,36 +13,34 @@ jobs:
       - name: Test HackerRank
         continue-on-error: true
         run: |
-          CODE=$(curl -s -o /tmp/hr.json -w "%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerrank.com/rest/contests/upcoming?offset=0&limit=3")
-          echo "HackerRank HTTP_CODE: $CODE"
-          cat /tmp/hr.json | head -n 3
+          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerrank.com/rest/contests/upcoming?offset=0&limit=3" > /tmp/hr.txt
 
       - name: Test HackerEarth
         continue-on-error: true
         run: |
-          CODE=$(curl -s -o /tmp/he.json -w "%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerearth.com/chrome-extension/events/")
-          echo "HackerEarth HTTP_CODE: $CODE"
-          cat /tmp/he.json | head -n 10
+          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.hackerearth.com/chrome-extension/events/" > /tmp/he.txt
 
       - name: Test CodeChef
         continue-on-error: true
         run: |
-          CODE=$(curl -s -o /tmp/cc.json -w "%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.codechef.com/api/list/contests/all?sort_by=START&sorting_order=asc&offset=0&mode=all")
-          echo "CodeChef HTTP_CODE: $CODE"
-          cat /tmp/cc.json | head -n 5
+          curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "https://www.codechef.com/api/list/contests/all?sort_by=START&sorting_order=asc&offset=0&mode=all" > /tmp/cc.txt
 
       - name: Test Codeforces
         continue-on-error: true
         run: |
-          CODE=$(curl -s -o /tmp/cf.json -w "%{http_code}" "https://codeforces.com/api/contest.list?gym=false")
-          echo "Codeforces HTTP_CODE: $CODE"
-          cat /tmp/cf.json | head -c 200
-          echo ""
+          curl -s -w "\nHTTP_CODE:%{http_code}" "https://codeforces.com/api/contest.list?gym=false" > /tmp/cf.txt
 
-      - name: Output Summary
+      - name: Save Results
         run: |
-          echo "=== SUMMARY OF ENDPOINTS ==="
-          echo "HackerRank: $(cat /tmp/hr.json | head -c 100)"
-          echo "HackerEarth: $(cat /tmp/he.json | head -c 100)"
-          echo "CodeChef: $(cat /tmp/cc.json | head -c 100)"
-          echo "Codeforces: $(cat /tmp/cf.json | head -c 100)"
+          mkdir -p ./endpoint-results
+          cp /tmp/hr.txt ./endpoint-results/hackerrank.txt
+          cp /tmp/he.txt ./endpoint-results/hackerearth.txt
+          cp /tmp/cc.txt ./endpoint-results/codechef.txt
+          cp /tmp/cf.txt ./endpoint-results/codeforces.txt
+
+      - name: Upload endpoint results
+        uses: actions/upload-artifact@v4
+        with:
+          name: endpoint-results
+          path: ./endpoint-results/
+          retention-days: 1
