@@ -4,23 +4,44 @@ const Groq = require('groq-sdk');
 let isGeminiDailyExhausted = false;
 
 /**
- * Structurer using Gemini 1.5 Flash
- * Extracts structured JSON from raw hackathon text.
+ * Helper to build batch prompt for structured extraction
  */
-async function structureData(card) {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY environment variable is missing.');
-  }
+function buildBatchPrompt(cards) {
+  const inputData = cards.map((c, i) => ({
+    record_index: i,
+    computed_deadline: c.deadline || 'None',
+    source_url: c.source_url,
+    raw_text: c.raw_text
+  }));
 
-  if (isGeminiDailyExhausted) {
-    const res = await fallbackToGroq(null, [card]);
-    return res[0] || { error: 'groq_fallback_failed' };
-  }
+  return `You are a data structurer for an opportunities board. Extract the required fields from the following array of unstructured texts into a precise JSON array of objects.
 
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+CRITICAL INSTRUCTIONS:
+- You must output a JSON array containing EXACTLY ${cards.length} objects, in the exact same order as the input array.
+- You must output valid, parsable JSON only. No markdown formatting, no comments, no intro text.
+- If you cannot find a required field for a specific record, set it to null. DO NOT skip records.
 
-  const prompt = `You are a data structurer for an opportunities board. Extract the required fields from the following unstructured text into a precise JSON object.
+For each object in the array, include these fields:
+- "title": string
+- "type": string — one of: "internship", "hackathon", "fellowship", "scholarship", "open-source program", "competition", "career event"
+- "description": string — a 1-2 sentence summary. If there is a start date but no application deadline, note the start date here.
+- "source_url": string — the exact URL provided in the input for that record
+- "deadline": string — ISO 8601 date (YYYY-MM-DDTHH:mm:ssZ). If 'computed_deadline' is provided for the record, use it exactly. Do not confuse event start dates with application deadlines. If you cannot find an application deadline, set to null.
+- "source_of_deadline": string — Quote the exact text from the input that you derived the deadline from.
+- "domain_tags": array of strings
+- "eligibility": object (optional)
+- "effort_level": string (optional)
+- "competitiveness": string (optional)
+
+INPUT ARRAY:
+${JSON.stringify(inputData, null, 2)}`;
+}
+
+/**
+ * Helper to build single-card prompt for structured extraction
+ */
+function buildSinglePrompt(card) {
+  return `You are a data structurer for an opportunities board. Extract the required fields from the following unstructured text into a precise JSON object.
 
 CRITICAL INSTRUCTIONS:
 - You must output valid, parsable JSON only. No markdown formatting, no comments, no intro text.
@@ -46,6 +67,27 @@ ${card.source_url}
 
 RAW TEXT:
 ${card.raw_text}`;
+}
+
+/**
+ * Structurer using Gemini 1.5 Flash
+ * Extracts structured JSON from raw hackathon text.
+ */
+async function structureData(card) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY environment variable is missing.');
+  }
+
+  if (isGeminiDailyExhausted) {
+    const prompt = buildBatchPrompt([card]);
+    const res = await fallbackToGroq(prompt, [card]);
+    return res[0] || { error: 'groq_fallback_failed' };
+  }
+
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  const prompt = buildSinglePrompt(card);
 
   try {
     const result = await model.generateContent(prompt);
@@ -68,14 +110,11 @@ ${card.raw_text}`;
     parsed.deadline_confidence = card.deadline_confidence;
     return parsed;
   } catch (err) {
-    if (err.message && err.message.includes('429')) {
-      isGeminiDailyExhausted = true;
-      console.warn('[Gemini API] 429 Quota limit hit in structureData. Tripping circuit breaker to Groq.');
-      const res = await fallbackToGroq(prompt, [card]);
-      return res[0] || { error: 'groq_fallback_failed' };
-    }
-    console.warn(`Failed to parse Gemini response as JSON: ${err.message}`);
-    return { error: 'malformed_json' };
+    isGeminiDailyExhausted = true;
+    console.warn(`[Gemini API] Error in structureData (${err.message ? err.message.substring(0, 80) : ''}...). Tripping circuit breaker to Groq...`);
+    const batchPrompt = buildBatchPrompt([card]);
+    const res = await fallbackToGroq(batchPrompt, [card]);
+    return res[0] || { error: 'groq_fallback_failed' };
   }
 }
 
@@ -90,43 +129,15 @@ async function structureDataBatch(cards) {
 
   if (cards.length === 0) return [];
 
+  const prompt = buildBatchPrompt(cards);
+
   if (isGeminiDailyExhausted) {
     console.log("[Gemini] Circuit breaker active, bypassing to Groq.");
-    return await fallbackToGroq(null, cards);
+    return await fallbackToGroq(prompt, cards);
   }
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-  // Map input to a clean array to prevent token bloat
-  const inputData = cards.map((c, i) => ({
-    record_index: i,
-    computed_deadline: c.deadline || 'None',
-    source_url: c.source_url,
-    raw_text: c.raw_text
-  }));
-
-  const prompt = `You are a data structurer for an opportunities board. Extract the required fields from the following array of unstructured texts into a precise JSON array of objects.
-
-CRITICAL INSTRUCTIONS:
-- You must output a JSON array containing EXACTLY ${cards.length} objects, in the exact same order as the input array.
-- You must output valid, parsable JSON only. No markdown formatting, no comments, no intro text.
-- If you cannot find a required field for a specific record, set it to null. DO NOT skip records.
-
-For each object in the array, include these fields:
-- "title": string
-- "type": string — one of: "internship", "hackathon", "fellowship", "scholarship", "open-source program", "competition", "career event"
-- "description": string — a 1-2 sentence summary. If there is a start date but no application deadline, note the start date here.
-- "source_url": string — the exact URL provided in the input for that record
-- "deadline": string — ISO 8601 date (YYYY-MM-DDTHH:mm:ssZ). If 'computed_deadline' is provided for the record, use it exactly. Do not confuse event start dates with application deadlines. If you cannot find an application deadline, set to null.
-- "source_of_deadline": string — Quote the exact text from the input that you derived the deadline from.
-- "domain_tags": array of strings
-- "eligibility": object (optional)
-- "effort_level": string (optional)
-- "competitiveness": string (optional)
-
-INPUT ARRAY:
-${JSON.stringify(inputData, null, 2)}`;
 
   const maxRetries = 2;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -172,14 +183,13 @@ ${JSON.stringify(inputData, null, 2)}`;
       });
 
     } catch (err) {
+      if (err.message.includes('403') || err.message.includes('404') || err.message.includes('denied access') || err.message.includes('GenerateRequestsPerDay')) {
+        console.warn(`\n[Gemini API] Quota/Access issue detected (${err.message.substring(0, 80)}...). Tripping Circuit Breaker to Groq...`);
+        isGeminiDailyExhausted = true;
+        return await fallbackToGroq(prompt, cards);
+      }
+      
       if (err.message.includes('429')) {
-        // [CIRCUIT BREAKER] Detect if daily quota is completely exhausted
-        if (err.message.includes('GenerateRequestsPerDay')) {
-          console.warn(`\n[Gemini API] DAILY QUOTA EXHAUSTED detected! Tripping Circuit Breaker to Groq...`);
-          isGeminiDailyExhausted = true;
-          return await fallbackToGroq(prompt, cards);
-        }
-        
         if (attempt < maxRetries) {
           console.warn(`\n[Gemini API] Hit 429 Quota Error. Pausing for 65 seconds before retry (${attempt}/${maxRetries})...`);
           await new Promise(resolve => setTimeout(resolve, 65000));
@@ -201,52 +211,65 @@ async function fallbackToGroq(prompt, cards) {
     return cards.map(c => ({ error: 'malformed_json_batch' }));
   }
 
-  try {
-    console.log(`\n[Groq API] Falling back to Groq Llama 3 API for batch...`);
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    
-    // Groq json_object mode requires a JSON object as the root, not an array.
-    const groqPrompt = prompt + "\n\nCRITICAL: You must return a JSON OBJECT with a single key 'records' containing the array. Example: { \"records\": [ {...}, {...} ] }";
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  const groqPrompt = prompt + "\n\nCRITICAL: You must return a JSON OBJECT with a single key 'records' containing the array. Example: { \"records\": [ {...}, {...} ] }";
+  const maxRetries = 2;
 
-    const completion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: groqPrompt }],
-      model: 'llama-3.1-8b-instant',
-      temperature: 0.1,
-      response_format: { type: 'json_object' }
-    });
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`\n[Groq API] Falling back to Groq openai/gpt-oss-20b for batch (attempt ${attempt}/${maxRetries})...`);
 
-    const responseText = completion.choices[0]?.message?.content || "{}";
-    const parsedData = JSON.parse(responseText);
-    
-    let parsedArray = parsedData.records;
-    if (!Array.isArray(parsedArray)) {
-       if (Array.isArray(parsedData)) parsedArray = parsedData;
-       else return cards.map(c => ({ error: 'groq_malformed_batch' }));
-    }
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: groqPrompt }],
+        model: 'openai/gpt-oss-20b',
+        max_tokens: 4096,
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
+      });
 
-    // Process each structured record and validate
-    return parsedArray.map((parsed, i) => {
-      if (!parsed) return { error: 'null_record_in_batch' };
-      const card = cards[i] || {};
+      const responseText = completion.choices[0]?.message?.content || "{}";
+      const parsedData = JSON.parse(responseText);
 
-      if (parsed.deadline) {
-        const deadlineDate = new Date(parsed.deadline);
-        const now = new Date();
-        const oneYearFromNow = new Date();
-        oneYearFromNow.setFullYear(now.getFullYear() + 1);
-
-        if (deadlineDate < now) return { error: 'stale_opportunity' };
-        if (deadlineDate > oneYearFromNow) return { error: 'deadline_out_of_range' };
-        if (deadlineDate.getFullYear() < 2025) return { error: `invalid_date: ${parsed.deadline}` };
+      let parsedArray = parsedData.records;
+      if (!Array.isArray(parsedArray)) {
+         if (Array.isArray(parsedData)) parsedArray = parsedData;
+         else return cards.map(c => ({ error: 'groq_malformed_batch' }));
       }
 
-      parsed.deadline_confidence = card.deadline_confidence || 'none';
-      return parsed;
-    });
+      // Process each structured record and validate
+      return parsedArray.map((parsed, i) => {
+        if (!parsed) return { error: 'null_record_in_batch' };
+        const card = cards[i] || {};
 
-  } catch (err) {
-    console.error(`[Groq API] Fallback failed: ${err.message}`);
-    return cards.map(c => ({ error: `groq_failed: ${err.message}` }));
+        if (parsed.deadline) {
+          const deadlineDate = new Date(parsed.deadline);
+          const now = new Date();
+          const oneYearFromNow = new Date();
+          oneYearFromNow.setFullYear(now.getFullYear() + 1);
+
+          if (deadlineDate < now) return { error: 'stale_opportunity' };
+          if (deadlineDate > oneYearFromNow) return { error: 'deadline_out_of_range' };
+          if (deadlineDate.getFullYear() < 2025) return { error: `invalid_date: ${parsed.deadline}` };
+        }
+
+        parsed.deadline_confidence = card.deadline_confidence || 'none';
+        return parsed;
+      });
+
+    } catch (err) {
+      const is429 = err.message && (err.message.includes('429') || err.message.toLowerCase().includes('rate limit'));
+      if (is429 && attempt < maxRetries) {
+        // Extract retry delay from Groq error message if present (e.g. "try again in 3.2s")
+        const delayMatch = err.message.match(/try again in ([\d.]+)s/i);
+        const waitSec = delayMatch ? Math.ceil(parseFloat(delayMatch[1])) + 1 : 5;
+        console.warn(`[Groq API] Hit 429 Rate Limit. Pausing for ${waitSec}s before retry...`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        continue;
+      }
+
+      console.error(`[Groq API] Fallback failed: ${err.message}`);
+      return cards.map(c => ({ error: `groq_failed: ${err.message}` }));
+    }
   }
 }
 

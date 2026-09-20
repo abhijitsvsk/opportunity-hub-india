@@ -2,7 +2,8 @@
 
 import {
   Compass, Flame, User, Star,
-  ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Trophy, Rocket, Filter, CheckCircle2, Bookmark
+  ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Trophy, Rocket, Filter, CheckCircle2, Bookmark,
+  Code2, Briefcase
 } from "lucide-react";
 import { useState, useRef, useTransition, useOptimistic, useCallback, useEffect } from "react";
 import { toggleBookmark, updateApplicationStatus } from "@/app/actions";
@@ -129,8 +130,10 @@ export default function Feed({
 
   const FILTER_DEFS = [
     { id: "All",           label: "All",           icon: <Rocket size={13} />,  match: (_: Opportunity) => true },
+    { id: "Competitions",  label: "Competitions",  icon: <Code2 size={13} />,   match: (op: Opportunity) => (op.type || '').toLowerCase() === "competition" || /contest|competition|codeforces|codechef|hackerrank|kaggle/i.test(op.title || "") },
     { id: "Hackathons",    label: "Hackathons",    icon: <Zap size={13} />,     match: (op: Opportunity) => (op.type || '').toLowerCase() === "hackathon" || /hackathon/i.test(op.title || "") },
-    { id: "Internships",   label: "Internships",   icon: <Trophy size={13} />,  match: (op: Opportunity) => (op.type || '').toLowerCase() === "internship" || /intern/i.test(op.title || "") },
+    { id: "Internships",   label: "Internships",   icon: <Briefcase size={13} />, match: (op: Opportunity) => (op.type || '').toLowerCase() === "internship" || /intern/i.test(op.title || "") },
+    { id: "Full-time",     label: "Full-time",     icon: <Briefcase size={13} />, match: (op: Opportunity) => (op.type || '').toLowerCase() === "full-time" || /full.time|sde|engineer/i.test(op.title || "") },
     { id: "Fellowships",   label: "Fellowships",   icon: <Star size={13} />,    match: (op: Opportunity) => (op.type || '').toLowerCase() === "fellowship" || /fellowship/i.test(op.title || "") },
     { id: "Open Source",   label: "Open Source",   icon: <Globe size={13} />,   match: (op: Opportunity) => (op.type || '').toLowerCase().includes("open") || /open.source|gsoc|outreachy/i.test(op.title || "") },
     { id: "AI & ML",       label: "AI & ML",       icon: <Brain size={13} />,   match: (op: Opportunity) => op.domain_tags?.some(t => /ai|machine learning|nlp|neural|deep learning|data/i.test(t)) || /ai|machine learning|nlp|neural|deep learning|data science|intelligence/i.test(op.title || "") },

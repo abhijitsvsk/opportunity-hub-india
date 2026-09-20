@@ -2,14 +2,27 @@ const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Normalizes a string for cross-source deduplication:
+ * - Lowercase all characters
+ * - Strip corporate/legal suffixes (Private Limited, Pvt Ltd, Inc, LLC, Ltd, Corp, etc.)
+ * - Strip 4-digit years (2024, 2025, 2026, 2027, etc.)
+ * - Strip punctuation and special characters (keep alphanumeric and spaces)
+ * - Collapse multiple spaces and trim leading/trailing whitespace
+ * - Returns a clean string, or null if input is empty/falsy/whitespace-only
+ */
 function normalizeString(str) {
-  if (!str) return '';
-  return str.toLowerCase()
-    .replace(/[^\w\s]/g, '')
-    .replace(/\b(inc|llc|ltd|corp)\b/g, '')
-    .replace(/\b(2025|2026|2027)\b/g, '')
+  if (!str || typeof str !== 'string') return null;
+
+  const cleaned = str
+    .toLowerCase()
+    .replace(/\b(private\s+limited|pvt\s+ltd|pvt|inc|llc|ltd|corp|corporation|gmbh|co)\b/gi, '')
+    .replace(/\b20\d{2}\b/g, '')
+    .replace(/[^a-z0-9\s]/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+  return cleaned.length > 0 ? cleaned : null;
 }
 
 /**
@@ -50,7 +63,9 @@ function sanitizeType(val) {
   const lower = String(val).toLowerCase().trim();
   if (lower.includes('intern')) return 'internship';
   if (lower.includes('hackathon')) return 'hackathon';
+  if (lower.includes('competition') || lower.includes('contest')) return 'competition';
   if (lower.includes('fellowship')) return 'fellowship';
+  if (lower.includes('scholarship')) return 'scholarship';
   if (lower.includes('open') || lower.includes('oss') || lower.includes('source')) return 'open-source program';
   if (lower.includes('full') || lower.includes('job') || lower.includes('career')) return 'full-time';
   return 'internship';
@@ -68,8 +83,26 @@ function sanitizeConfidence(val) {
   return 'unknown';
 }
 
+function sanitizeCompetitiveness(val) {
+  if (!val) return 'medium';
+  const lower = String(val).toLowerCase().trim();
+  if (lower === 'low' || lower === 'medium' || lower === 'high') return lower;
+  if (lower.includes('high')) return 'high';
+  if (lower.includes('low')) return 'low';
+  return 'medium';
+}
+
+function sanitizeEffortLevel(val) {
+  if (!val) return 'medium';
+  const lower = String(val).toLowerCase().trim();
+  if (lower === 'low' || lower === 'medium' || lower === 'high') return lower;
+  if (lower.includes('high')) return 'high';
+  if (lower.includes('low')) return 'low';
+  return 'medium';
+}
+
 /**
- * Upserts structured data into Supabase
+ * Upserts structured data into Supabase using bulk operations
  */
 async function upsertData(records, supabaseKey) {
   if (!process.env.SUPABASE_URL || !supabaseKey) {
@@ -87,17 +120,40 @@ async function upsertData(records, supabaseKey) {
   const newRecords = [];
   const failedUpserts = [];
 
-  // Query existing URLs to determine which records are completely new
-  const incomingUrls = records.map(r => r.source_url).filter(Boolean);
+  // Filter out error records and in-batch duplicate URLs
+  const validRecords = [];
+  const seenUrls = new Set();
+  for (const record of records) {
+    if (!record || record.error) {
+      console.warn(`Skipping record due to error: ${record?.error || 'null_record'}`);
+      skipCount++;
+    } else if (!record.source_url) {
+      console.warn(`Skipping record missing source_url: ${record.title || 'untitled'}`);
+      skipCount++;
+    } else if (seenUrls.has(record.source_url)) {
+      // Deduplicate in-batch so PostgreSQL ON CONFLICT doesn't see identical keys in the same statement
+      skipCount++;
+    } else {
+      seenUrls.add(record.source_url);
+      validRecords.push(record);
+    }
+  }
+
+  if (validRecords.length === 0) {
+    return { successCount: 0, skipCount, failCount: 0, newRecords: [] };
+  }
+
+  // Pre-query existing URLs to determine which records are completely new
+  const incomingUrls = validRecords.map(r => r.source_url).filter(Boolean);
   let existingUrls = new Set();
-  
+
   if (incomingUrls.length > 0) {
     try {
       const { data: existingData } = await supabase
         .from('opportunities')
         .select('source_url')
         .in('source_url', incomingUrls);
-        
+
       if (existingData) {
         existingUrls = new Set(existingData.map(r => r.source_url));
       }
@@ -105,89 +161,99 @@ async function upsertData(records, supabaseKey) {
       console.warn(`Could not fetch existing URLs for comparison: ${err.message}`);
     }
   }
-  
-  for (const record of records) {
-    if (record.error) {
-      console.warn(`Skipping record due to error: ${record.error}`);
-      skipCount++;
-      continue;
+
+  // Check if location column exists in the database schema
+  let hasLocationColumn = false;
+  try {
+    const { error: locColErr } = await supabase.from('opportunities').select('location').limit(1);
+    hasLocationColumn = !locColErr;
+  } catch {
+    hasLocationColumn = false;
+  }
+
+  // Prepare normalized payloads
+  const payloads = validRecords.map(record => {
+    const rawCompany = record.company || record.organization || record.organisation || null;
+    const payload = {
+      title: record.title,
+      type: sanitizeType(record.type),
+      description: record.description,
+      source_url: record.source_url,
+      deadline: record.deadline,
+      deadline_confidence: sanitizeConfidence(record.deadline_confidence),
+      domain_tags: record.domain_tags || [],
+      eligibility: record.eligibility || { type: 'all' },
+      effort_level: sanitizeEffortLevel(record.effort_level),
+      competitiveness: sanitizeCompetitiveness(record.competitiveness),
+      is_active: true,
+      normalized_title: normalizeString(record.title),
+      normalized_company: normalizeString(rawCompany)
+    };
+    if (hasLocationColumn && record.location) {
+      payload.location = record.location;
     }
+    return payload;
+  });
+
+  // Chunk payloads into batches of 50 to prevent oversized request payloads
+  const CHUNK_SIZE = 50;
+  for (let i = 0; i < payloads.length; i += CHUNK_SIZE) {
+    const chunk = payloads.slice(i, i + CHUNK_SIZE);
+    const chunkRecords = validRecords.slice(i, i + CHUNK_SIZE);
 
     try {
-      const normalizedTitle = normalizeString(record.title);
-      const company = record.company || record.organization || record.organisation || '';
-      const normalizedCompany = company ? normalizeString(company) : '__no_company_fallback__';
-
-      const payload = {
-        title: record.title,
-        type: sanitizeType(record.type),
-        description: record.description,
-        source_url: record.source_url,
-        deadline: record.deadline,
-        deadline_confidence: sanitizeConfidence(record.deadline_confidence),
-        domain_tags: record.domain_tags || [],
-        eligibility: record.eligibility || { 'type': 'all' },
-        effort_level: record.effort_level || 'medium',
-        competitiveness: record.competitiveness || 'medium',
-        is_active: true,
-        normalized_title: normalizedTitle,
-        normalized_company: normalizedCompany
-      };
-
-      // Check if opportunity already exists by source_url OR normalized title & company
-      let existingMatch = null;
-      try {
-        const { data: byUrl } = await supabase
-          .from('opportunities')
-          .select('id')
-          .eq('source_url', record.source_url)
-          .maybeSingle();
-
-        if (byUrl) {
-          existingMatch = byUrl;
-        } else {
-          const { data: byNorm } = await supabase
-            .from('opportunities')
-            .select('id')
-            .eq('normalized_title', normalizedTitle)
-            .eq('normalized_company', normalizedCompany)
-            .maybeSingle();
-          if (byNorm) existingMatch = byNorm;
-        }
-      } catch (err) {
-        // Ignore select error, proceed to fallback
-      }
-
-      let res;
-      if (existingMatch && existingMatch.id) {
-        res = await supabase
-          .from('opportunities')
-          .update(payload)
-          .eq('id', existingMatch.id);
-      } else {
-        res = await supabase
-          .from('opportunities')
-          .insert(payload);
-      }
-
-      const error = res.error;
+      const { data, error } = await supabase
+        .from('opportunities')
+        .upsert(chunk, { onConflict: 'source_url', ignoreDuplicates: false })
+        .select('id, title, source_url');
 
       if (error) {
-        console.error(`Error upserting ${record.source_url}:`, error.message);
-        failCount++;
-        failedUpserts.push(record);
-      } else {
-        console.log(`Upserted: ${record.title}`);
-        successCount++;
-        
-        if (!existingUrls.has(record.source_url)) {
-          newRecords.push(record);
+        console.warn(`Chunk upsert failed (${error.message}). Falling back to per-record upsert for this chunk...`);
+        // Fallback to per-record upsert for this chunk
+        for (let j = 0; j < chunk.length; j++) {
+          const item = chunk[j];
+          const rawItem = chunkRecords[j];
+          const { error: singleErr } = await supabase
+            .from('opportunities')
+            .upsert(item, { onConflict: 'source_url', ignoreDuplicates: false });
+
+          if (singleErr) {
+            if (singleErr.message.includes('unique_normalized_opportunity') && item.normalized_title && item.normalized_company) {
+              const { error: updateErr } = await supabase
+                .from('opportunities')
+                .update(item)
+                .eq('normalized_title', item.normalized_title)
+                .eq('normalized_company', item.normalized_company);
+
+              if (!updateErr) {
+                console.log(`Updated cross-posted record (${item.normalized_title} @ ${item.normalized_company}) for URL: ${item.source_url}`);
+                successCount++;
+                continue;
+              }
+            }
+            console.error(`Error upserting ${item.source_url}: ${singleErr.message}`);
+            failCount++;
+            failedUpserts.push(rawItem);
+          } else {
+            successCount++;
+            if (!existingUrls.has(item.source_url)) {
+              newRecords.push(rawItem);
+            }
+          }
         }
+      } else {
+        successCount += chunk.length;
+        for (const item of chunkRecords) {
+          if (!existingUrls.has(item.source_url)) {
+            newRecords.push(item);
+          }
+        }
+        console.log(`Bulk upserted chunk of ${chunk.length} records successfully.`);
       }
-    } catch (err) {
-      console.error(`Exception upserting ${record.source_url}:`, err.message);
-      failCount++;
-      failedUpserts.push(record);
+    } catch (chunkEx) {
+      console.error(`Exception during chunk upsert: ${chunkEx.message}`);
+      failCount += chunk.length;
+      failedUpserts.push(...chunkRecords);
     }
   }
 
@@ -198,4 +264,4 @@ async function upsertData(records, supabaseKey) {
   return { successCount, skipCount, failCount, newRecords };
 }
 
-module.exports = { upsertData, saveLocalCache };
+module.exports = { upsertData, saveLocalCache, normalizeString };

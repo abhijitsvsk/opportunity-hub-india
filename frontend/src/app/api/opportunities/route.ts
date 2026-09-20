@@ -37,11 +37,17 @@ export async function GET(request: NextRequest) {
         case "Internships":
           orConditions.push("type.ilike.%intern%");
           break;
+        case "Competitions":
+          orConditions.push("type.ilike.%competition%");
+          break;
         case "Fellowships":
           orConditions.push("type.ilike.%fellowship%");
           break;
         case "Open Source":
           orConditions.push("type.ilike.%open%");
+          break;
+        case "Full-time":
+          orConditions.push("type.ilike.%full-time%");
           break;
         case "AI & ML":
           orConditions.push("domain_tags.ov.{AI,ML,AI/ML,\"Artificial Intelligence\",\"Machine Learning\",NLP,\"Deep Learning\",ai,ml,\"machine learning\",\"artificial intelligence\",nlp,\"deep learning\",data,\"Data Science\"}");

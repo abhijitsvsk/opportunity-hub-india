@@ -1,7 +1,12 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { v4: uuidv4 } = require('uuid');
+const { isRelevantForIndianStudent } = require('./utils/geo-filter');
 
+// NOTE: SimplifyJobs maintains New-Grad-Positions as a single PERPETUAL repository
+// (unlike Summer-Internships which splits repos by year like Summer2026-Internships).
+// The README in this repo is updated in-place for each graduating class. Do not add
+// year auto-detection logic here.
 const SOURCE_URL = 'https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/README.md';
 
 /**
@@ -16,6 +21,7 @@ async function scrapeGithubNewGrad() {
 
     const $ = cheerio.load(text);
     const opportunities = [];
+    let totalParsedRows = 0;
 
     $('table tbody tr').each((i, row) => {
       const cols = $(row).find('td');
@@ -39,6 +45,13 @@ async function scrapeGithubNewGrad() {
         }
 
         if (company && role && source_url) {
+          totalParsedRows++;
+
+          // Geographic filter for Indian students
+          if (!isRelevantForIndianStudent(location, `${company} - ${role}`)) {
+            return;
+          }
+
           const domain_tags = [];
           const lowerRole = role.toLowerCase();
           if (lowerRole.includes('software')) domain_tags.push('Software Engineering');
@@ -52,6 +65,8 @@ async function scrapeGithubNewGrad() {
           opportunities.push({
             id: uuidv4(),
             title: `${company} - ${role}`,
+            company: company,
+            location: location,
             type: 'full-time',
             description: `Full-Time New Grad position at ${company} located in ${location}.`,
             source_url,
@@ -71,12 +86,12 @@ async function scrapeGithubNewGrad() {
       }
     });
     
-    // Critical Issue #6 Validation
-    if (opportunities.length < 10) {
-      throw new Error(`Parse Failure: Scraper found only ${opportunities.length} records. GitHub README format likely changed.`);
+    // Critical Issue #6 Validation: Check that raw table was parsed properly
+    if (totalParsedRows < 10) {
+      throw new Error(`Parse Failure: Scraper found only ${totalParsedRows} records. GitHub README format likely changed.`);
     }
 
-    console.log(`[Scraper] Successfully parsed ${opportunities.length} active new grad roles from GitHub.`);
+    console.log(`[Scraper] Successfully parsed ${totalParsedRows} total new grad roles from GitHub (${opportunities.length} eligible for Indian students).`);
     return opportunities;
 
   } catch (error) {

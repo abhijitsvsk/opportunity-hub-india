@@ -5,6 +5,8 @@ export type Opportunity = {
   description: string;
   source_url: string;
   deadline: string;
+  deadline_confidence?: string;
+  location?: string;
   domain_tags: string[];
   effort_level: string;
   competitiveness: string;

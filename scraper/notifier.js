@@ -1,8 +1,9 @@
 /**
  * Notifies Discord of newly found opportunities via Webhook
+ * Sends a single digest message per source, capped at 5 highlight embeds.
  */
 async function notifyDiscord(newRecords, sourceName) {
-  if (newRecords.length === 0) return;
+  if (!newRecords || newRecords.length === 0) return;
   
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
   if (!webhookUrl) {
@@ -10,81 +11,72 @@ async function notifyDiscord(newRecords, sourceName) {
     return;
   }
 
-  console.log(`\nSending ${newRecords.length} new records to Discord...`);
+  const count = newRecords.length;
+  const highlights = newRecords.slice(0, 5);
+  const shown = highlights.length;
 
-  // Discord allows a maximum of 10 embeds per message
-  const batchSize = 10;
-  for (let i = 0; i < newRecords.length; i += batchSize) {
-    const batch = newRecords.slice(i, i + batchSize);
-    
-    const embeds = batch.map(record => {
-      // Create a nice human-readable deadline
-      let deadlineStr = 'Unknown';
-      if (record.deadline) {
-        deadlineStr = new Date(record.deadline).toLocaleDateString('en-US', {
-          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-        });
-      }
+  console.log(`\nSending digest notification for ${count} new records (${shown} highlights) from ${sourceName} to Discord...`);
 
-      // Format tags as inline code blocks
-      const tags = record.domain_tags && record.domain_tags.length > 0 
-        ? record.domain_tags.map(t => `\`${t}\``).join(' ') 
-        : '*None*';
-
-      return {
-        title: `🚀 ${record.title}`,
-        url: record.source_url,
-        description: record.description || 'No description provided.',
-        color: 0x5865F2, // Discord Blurple
-        fields: [
-          {
-            name: 'Type',
-            value: record.type.charAt(0).toUpperCase() + record.type.slice(1),
-            inline: true
-          },
-          {
-            name: 'Deadline',
-            value: deadlineStr,
-            inline: true
-          },
-          {
-            name: 'Tags',
-            value: tags,
-            inline: false
-          }
-        ],
-        footer: {
-          text: `Source: ${sourceName}`
-        },
-        timestamp: new Date().toISOString()
-      };
-    });
-
-    const payload = {
-      content: i === 0 ? `Hey @here, found **${newRecords.length}** new opportunities from ${sourceName}!` : '',
-      embeds: embeds
-    };
-
-    try {
-      const res = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+  const embeds = highlights.map(record => {
+    let deadlineStr = 'Rolling / Unknown';
+    if (record.deadline) {
+      deadlineStr = new Date(record.deadline).toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
       });
-      
-      if (!res.ok) {
-        console.error(`Discord webhook failed: ${res.status} ${res.statusText}`);
-      } else {
-        console.log(`Successfully sent batch of ${batch.length} to Discord.`);
-      }
-    } catch (err) {
-      console.error(`Exception sending to Discord webhook:`, err.message);
     }
+
+    const tags = record.domain_tags && record.domain_tags.length > 0 
+      ? record.domain_tags.map(t => `\`${t}\``).join(' ') 
+      : '*None*';
+
+    return {
+      title: `🎯 ${record.title}`,
+      url: record.source_url,
+      description: record.description ? (record.description.length > 200 ? record.description.slice(0, 197) + '...' : record.description) : 'No description provided.',
+      color: 0x5865F2, // Discord Blurple
+      fields: [
+        {
+          name: 'Type',
+          value: record.type ? (record.type.charAt(0).toUpperCase() + record.type.slice(1)) : 'Opportunity',
+          inline: true
+        },
+        {
+          name: 'Deadline',
+          value: deadlineStr,
+          inline: true
+        },
+        {
+          name: 'Tags',
+          value: tags,
+          inline: false
+        }
+      ],
+      footer: {
+        text: `Source: ${sourceName} • Opportunity Hub India`
+      },
+      timestamp: new Date().toISOString()
+    };
+  });
+
+  const payload = {
+    content: `🚀 **[${sourceName.toUpperCase()}] Ingestion Summary**: Found **${count}** new opportunities.\nShowing top ${shown} highlights. View all at: https://opportunity-hub-india.vercel.app`,
+    embeds: embeds
+  };
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
     
-    // Wait slightly between batches to avoid Discord rate limits
-    if (i + batchSize < newRecords.length) {
-      await new Promise(r => setTimeout(r, 1000));
+    if (!res.ok) {
+      console.error(`Discord digest webhook failed: ${res.status} ${res.statusText}`);
+    } else {
+      console.log(`Successfully sent ${sourceName} digest with ${shown} highlights to Discord.`);
     }
+  } catch (err) {
+    console.error(`Exception sending digest to Discord webhook:`, err.message);
   }
 }
 /**

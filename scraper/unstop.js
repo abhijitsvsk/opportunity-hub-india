@@ -1,3 +1,8 @@
+const axios = require('axios');
+const https = require('https');
+
+const ipv4Agent = new https.Agent({ family: 4, keepAlive: true });
+
 const TECH_KEYWORDS = ['developer', 'software', 'engineer', 'data', 'product', 'ai', 'ml', 'design', 'designer', 'research', 'analyst', 'security', 'cloud', 'devrel', 'technical', 'backend', 'frontend', 'fullstack', 'mobile', 'ios', 'android', 'blockchain', 'web3', 'infrastructure'];
 
 async function scrapeUnstop() {
@@ -13,13 +18,31 @@ async function scrapeUnstop() {
     // We will loop through pagination, capping at max 3 pages (300 items) per category
     while (page <= lastPage && page <= 3) {
       const url = `https://unstop.com/api/public/opportunity/search-result?opportunity=${category}&page=${page}&per_page=100&oppstatus=open`;
-      const res = await fetch(url);
-      
-      if (!res.ok) {
-        throw new Error(`Unstop API failed with status: ${res.status}`);
+      let data = null;
+      const retries = 3;
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          const res = await axios.get(url, {
+            httpsAgent: ipv4Agent,
+            timeout: 10000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+              'Accept': 'application/json'
+            }
+          });
+          data = res.data;
+          break;
+        } catch (fetchErr) {
+          if (attempt === retries) throw fetchErr;
+          console.warn(`[Unstop] Attempt ${attempt} failed (${fetchErr.message}). Retrying in 2s...`);
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
+
+      if (!data || !data.data) {
+        break;
       }
       
-      const data = await res.json();
       lastPage = data.data.last_page || 1;
       
       const items = data.data.data || [];

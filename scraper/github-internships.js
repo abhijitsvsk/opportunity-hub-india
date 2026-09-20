@@ -1,23 +1,50 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { v4: uuidv4 } = require('uuid');
+const { isRelevantForIndianStudent } = require('./utils/geo-filter');
 
-const SOURCE_URL = 'https://raw.githubusercontent.com/SimplifyJobs/Summer2025-Internships/dev/README.md';
+/**
+ * Computes dynamic repository URLs for SimplifyJobs Summer Internships.
+ * If August or later, recruitment begins for next summer's cycle.
+ */
+function getInternshipRepoUrls() {
+  const now = new Date();
+  const targetYear = now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
+  return {
+    primary: `https://raw.githubusercontent.com/SimplifyJobs/Summer${targetYear}-Internships/dev/README.md`,
+    fallback: `https://raw.githubusercontent.com/SimplifyJobs/Summer${targetYear - 1}-Internships/dev/README.md`
+  };
+}
 
 /**
  * Scrapes the SimplifyJobs GitHub README for SWE Internships.
  */
 async function scrapeGithubInternships() {
-  console.log(`[Scraper] Fetching internships from ${SOURCE_URL}`);
-  
+  const urls = getInternshipRepoUrls();
+  let response;
+  let activeUrl = urls.primary;
+
   try {
-    const response = await axios.get(SOURCE_URL);
+    console.log(`[Scraper] Fetching internships from primary URL: ${urls.primary}`);
+    response = await axios.get(urls.primary);
+  } catch (err) {
+    if (err.response && err.response.status === 404) {
+      console.warn(`[Scraper] Primary URL returned 404. Falling back to: ${urls.fallback}`);
+      activeUrl = urls.fallback;
+      response = await axios.get(urls.fallback);
+    } else {
+      throw err;
+    }
+  }
+
+  try {
     const text = response.data;
 
     // The README uses standard HTML tables. We can extract the table containing "Company", "Role", "Location"
     const $ = cheerio.load(text);
     
     const opportunities = [];
+    let totalParsedRows = 0;
 
     // Find the table. Simplify uses multiple tables for different categories. We'll grab rows from all.
     $('table tbody tr').each((i, row) => {
@@ -51,6 +78,13 @@ async function scrapeGithubInternships() {
         }
 
         if (company && role && source_url) {
+          totalParsedRows++;
+
+          // Geographic filter for Indian students
+          if (!isRelevantForIndianStudent(location, `${company} - ${role}`)) {
+            return;
+          }
+
           // Generate a synthetic deadline since GitHub lists don't have them usually
           // We set it to 1 month from now by default if it's active
           const deadline = new Date();
@@ -68,7 +102,9 @@ async function scrapeGithubInternships() {
           opportunities.push({
             id: uuidv4(),
             title: `${company} - ${role}`,
+            company: company,
             type: 'internship',
+            location: location,
             description: `Software Engineering Internship at ${company} located in ${location}.`,
             source_url,
             deadline: deadline.toISOString(),
@@ -88,7 +124,7 @@ async function scrapeGithubInternships() {
       }
     });
 
-    console.log(`[Scraper] Successfully parsed ${opportunities.length} active internships from GitHub.`);
+    console.log(`[Scraper] Successfully parsed ${totalParsedRows} total internships from GitHub (${opportunities.length} eligible for Indian students).`);
     return opportunities;
 
   } catch (error) {
