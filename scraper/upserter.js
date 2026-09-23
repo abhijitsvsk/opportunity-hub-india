@@ -112,7 +112,9 @@ async function upsertData(records, supabaseKey) {
   // Backup records to local cache before upserting
   saveLocalCache(records);
 
-  const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+  const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, {
+    auth: { persistSession: false }
+  });
 
   let successCount = 0;
   let skipCount = 0;

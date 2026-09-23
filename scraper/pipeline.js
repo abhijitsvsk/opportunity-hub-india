@@ -267,10 +267,13 @@ async function processPendingQueue(rateLimiter) {
    console.log(`--- PROCESSING PENDING QUEUE ---`);
    console.log(`=========================================`);
    
-   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-   const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
-   
    try {
+     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+     if (!process.env.SUPABASE_URL || !supabaseKey) {
+       console.warn('[Pending Queue] SUPABASE_URL or SUPABASE_SERVICE_KEY missing. Skipping.');
+       return;
+     }
+     const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
      const { data: pending } = await supabase.from('pending_processing').select('*').order('created_at', { ascending: true }).limit(300);
      
      if (!pending || pending.length === 0) {
@@ -536,7 +539,10 @@ async function main() {
 }
 
 if (require.main === module) {
-  main();
+  main().catch(err => {
+    console.error('\n❌ FATAL PIPELINE EXCEPTION:', err);
+    process.exit(1);
+  });
 }
 
 module.exports = { main, runPipelineSource, autoExpireOpportunities, runCrossSourceDeduplication };

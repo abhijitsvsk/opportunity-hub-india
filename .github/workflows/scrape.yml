@@ -4,6 +4,8 @@ on:
   schedule:
     # Run at 00:00 UTC every day
     - cron: '0 0 * * *'
+    # Test run scheduled for ~10 mins from now (18:48 IST / 13:18 UTC)
+    - cron: '18,22,25 13 * * *'
   workflow_dispatch:
     # Allows manual triggering from the GitHub Actions tab
 
@@ -18,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: 'scraper/package-lock.json'
 
