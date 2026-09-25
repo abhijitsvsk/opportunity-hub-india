@@ -38,7 +38,7 @@ async function processRawRecordsWithGemini(sourceName, rawRecords, rateLimiter) 
   const failedRecords = [];
   
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-  const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+  const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
 
   // 1. DEDUPLICATION: Find URLs that already exist in Supabase
   const urls = rawRecords.map(r => r.source_url).filter(Boolean);
@@ -164,7 +164,7 @@ async function runPipelineSource(sourceName, processFn, rateLimiter) {
     
     // Fetch cache of existing URLs for this source to pass to scrapers
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
     const existingUrls = new Set();
     
     try {
@@ -237,7 +237,7 @@ async function runPipelineSource(sourceName, processFn, rateLimiter) {
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
     if (process.env.SUPABASE_URL && supabaseKey) {
       try {
-        const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+        const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
         const { error: logErr } = await supabase.from('pipeline_runs').insert([{
           source: sourceName,
           started_at: stats.startedAt,
@@ -359,7 +359,7 @@ async function autoExpireOpportunities() {
   try {
     const nowIso = new Date().toISOString();
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
 
     const { data: expired, error: expireError } = await supabase
       .from('opportunities')
@@ -390,7 +390,7 @@ async function runCrossSourceDeduplication() {
   console.log(`=========================================`);
   try {
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
 
     const { data: rows, error } = await supabase
       .from('opportunities')

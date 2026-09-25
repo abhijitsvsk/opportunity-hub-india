@@ -1,7 +1,10 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Groq = require('groq-sdk');
 
-let isGeminiDailyExhausted = false;
+// Default to true — the Gemini free-tier API key is currently denied (403).
+// Groq (openai/gpt-oss-20b) handles all structuring until a valid Gemini key is provided.
+// To re-enable Gemini, set this to false and update the API key.
+let isGeminiDailyExhausted = true;
 
 /**
  * Helper to build batch prompt for structured extraction
