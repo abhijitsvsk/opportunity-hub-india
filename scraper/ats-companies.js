@@ -10,6 +10,11 @@ const { createClient } = require('@supabase/supabase-js');
 
 const ipv4Agent = new https.Agent({ family: 4, keepAlive: true });
 
+const COMMON_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 OpportunityHubIndia/1.0',
+  'Accept': 'application/json'
+};
+
 // Strict word-boundary patterns for entry-level / student tech roles
 const STUDENT_ROLE_REGEX = /\b(intern|internship|internships|new grad|new graduate|fresher|entry level|associate software engineer|associate engineer|sde[- ]?1|sde[- ]?i\b|graduate engineer trainee|\bget\b|mts[- ]?1|apprentice|trainee|early career|campus)\b/i;
 
@@ -94,7 +99,7 @@ function deriveDomainTags(title, desc = '') {
  */
 async function fetchGreenhouse(company) {
   const url = `https://boards-api.greenhouse.io/v1/boards/${company.token}/jobs`;
-  const res = await axios.get(url, { httpsAgent: ipv4Agent, timeout: 8000 });
+  const res = await axios.get(url, { httpsAgent: ipv4Agent, timeout: 8000, headers: COMMON_HEADERS });
   const rawJobs = res.data?.jobs || [];
 
   const candidates = [];
@@ -127,7 +132,7 @@ async function fetchGreenhouse(company) {
     let content = '';
     try {
       const detailUrl = `https://boards-api.greenhouse.io/v1/boards/${company.token}/jobs/${item.job.id}`;
-      const dRes = await axios.get(detailUrl, { httpsAgent: ipv4Agent, timeout: 6000 });
+      const dRes = await axios.get(detailUrl, { httpsAgent: ipv4Agent, timeout: 6000, headers: COMMON_HEADERS });
       content = dRes.data?.content || '';
     } catch {}
 
@@ -153,7 +158,7 @@ async function fetchGreenhouse(company) {
  */
 async function fetchLever(company) {
   const url = `https://api.lever.co/v0/postings/${company.token}?mode=json`;
-  const res = await axios.get(url, { httpsAgent: ipv4Agent, timeout: 8000 });
+  const res = await axios.get(url, { httpsAgent: ipv4Agent, timeout: 8000, headers: COMMON_HEADERS });
   const rawJobs = Array.isArray(res.data) ? res.data : [];
 
   return rawJobs.map(job => {
@@ -177,7 +182,7 @@ async function fetchLever(company) {
  */
 async function fetchAshby(company) {
   const url = `https://api.ashbyhq.com/posting-api/job-board/${company.token}`;
-  const res = await axios.get(url, { httpsAgent: ipv4Agent, timeout: 8000 });
+  const res = await axios.get(url, { httpsAgent: ipv4Agent, timeout: 8000, headers: COMMON_HEADERS });
   const rawJobs = res.data?.jobs || [];
 
   return rawJobs.map(job => {
@@ -202,7 +207,7 @@ async function fetchAshby(company) {
  */
 async function fetchSmartRecruiters(company) {
   const url = `https://api.smartrecruiters.com/v1/companies/${company.token}/postings?limit=100`;
-  const res = await axios.get(url, { httpsAgent: ipv4Agent, timeout: 8000 });
+  const res = await axios.get(url, { httpsAgent: ipv4Agent, timeout: 8000, headers: COMMON_HEADERS });
   const rawJobs = res.data?.content || [];
 
   return rawJobs.map(job => {

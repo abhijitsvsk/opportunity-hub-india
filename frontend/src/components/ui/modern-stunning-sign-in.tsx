@@ -80,8 +80,8 @@ const SignIn1: React.FC<SignInProps> = ({
           setConfirmationSent(res.message || "Please check your email to activate your account.");
         }
       } catch (err: any) {
-        if (err?.digest?.includes("NEXT_REDIRECT")) return;
-        setError(err.message || (isSignUp ? "Failed to sign up" : "Failed to sign in"));
+        if (err?.digest?.includes("NEXT_REDIRECT") || err?.message?.includes("NEXT_REDIRECT")) return;
+        setError(err?.message || (isSignUp ? "Failed to sign up" : "Failed to sign in"));
       } finally {
         setLoading(false);
       }

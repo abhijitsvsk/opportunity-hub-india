@@ -9,8 +9,8 @@ Active development — Core platform is built, deployed, and operational. Focus 
 ## What Is Working
 
 - **Landing Page**: 3D ContainerScroll preview, WebGL shader mascot, dynamic opportunity counters.
-- **Authentication**: Supabase SSR (Email/Password, GitHub OAuth, Google OAuth) with session refresh.
-- **Onboarding Flow**: 2-step profile onboarding (`user_profiles`) capturing tier, graduation year, tech stack, focus area.
+- **Authentication**: Supabase SSR (Email/Password, GitHub OAuth, Google OAuth) with session refresh. Dynamic Sign-In / Sign-Up toggle (`modern-stunning-sign-in.tsx`), graceful `NEXT_REDIRECT` error filtering, client & server validation, and try/catch network timeout resilience in `actions.ts`.
+- **Onboarding Flow**: 2-step profile onboarding (`user_profiles`) capturing tier, graduation year, tech stack, focus area. Redirects seamlessly upon first registration.
 - **Multi-View Dashboard Feed**:
   - Calm List (`OpportunityRow.tsx`) with flexible wrapping and touch-friendly actions
   - Relaxed Grid (`OpportunityGridCard.tsx`) with responsive columns and action row
@@ -22,9 +22,11 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **Robust Authentication**: Dynamic Sign-In / Sign-Up toggle (`modern-stunning-sign-in.tsx`), graceful `NEXT_REDIRECT` error filtering, and React `startTransition` GitHub OAuth.
 - **Application Tracking**: React 19 optimistic updates for stages (`to_apply`, `applied`, `accepted`, `rejected`, `archived`).
 - **Admin Portal**: Server-gated (`ADMIN_EMAIL`) manual opportunity manager and GitHub Actions scraper trigger.
-- **Scraper Pipeline (11 sources)**:
+- **Scraper Pipeline (13 sources)**:
   - 4-wave parallel/sequential execution (`pipeline.js`)
-  - Direct ATS Company Career Scraper (`ats-companies.js` + `companies.json`) querying 89 verified tech companies across Greenhouse, Lever, Ashby, and SmartRecruiters public APIs with fast two-stage querying and stale job reconciliation
+  - **FreeHire Live API Ingestor** (`freehire.js`): High-throughput query engine querying FreeHire's open REST API across 92 ATS platforms, importing hundreds of verified Indian student/entry-level tech opportunities with direct company career links.
+  - **Workday Enterprise Adapter** (`workday-companies.js`): Direct CXS JSON API client pulling student and early-career tech listings for Fortune 500 MNCs (Nvidia, Adobe, Salesforce, Target) without headless browser overhead.
+  - **Direct ATS Company Career Scraper** (`ats-companies.js` + `companies.json`): Scaled company registry with verified active endpoints across Greenhouse, Lever, Ashby, and SmartRecruiters (including Paytm, Meesho, CRED, InMobi, Sarvam AI, Mindtickle, Rubrik, Thoughtworks, Stripe) with stale job reconciliation.
   - Groq LLM structuring (`openai/gpt-oss-20b`) with 300-call budget and `pending_processing` overflow queue
   - Two-layer deduplication (`source_url` conflict + `deduplicate_opportunities()` RPC)
   - Strict India-focused filtering (`geo-filter.js`)

@@ -135,88 +135,124 @@ export async function getUserProfile() {
 }
 
 export async function signIn(formData: FormData) {
-  const parsed = AuthSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password")
-  });
+  try {
+    const parsed = AuthSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password")
+    });
 
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0].message };
+    }
+
+    const { email, password } = parsed.data;
+    const supabase = await createClient();
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    revalidatePath("/dashboard");
+    redirect("/dashboard");
+  } catch (err: any) {
+    if (err?.digest?.includes("NEXT_REDIRECT") || err?.message?.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
+    console.error("signIn error:", err);
+    const msg = err?.message || "";
+    if (msg.includes("fetch failed") || err?.code === "UND_ERR_CONNECT_TIMEOUT") {
+      return { error: "Authentication server timed out. The database may be waking up, please try again." };
+    }
+    return { error: msg || "Failed to sign in. Please try again." };
   }
-
-  const { email, password } = parsed.data;
-  const supabase = await createClient();
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  revalidatePath("/dashboard");
-  redirect("/dashboard");
 }
 
 export async function signUp(formData: FormData) {
-  const parsed = AuthSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password")
-  });
+  try {
+    const parsed = AuthSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password")
+    });
 
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0].message };
+    }
+
+    const { email, password } = parsed.data;
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    // If email confirmation is required and session is null
+    if (data?.user && !data?.session) {
+      return {
+        success: true,
+        requiresConfirmation: true,
+        message: "Verification email sent! Please check your inbox and click the link to activate your account."
+      };
+    }
+
+    revalidatePath("/dashboard");
+    redirect("/onboarding");
+  } catch (err: any) {
+    if (err?.digest?.includes("NEXT_REDIRECT") || err?.message?.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
+    console.error("signUp error:", err);
+    const msg = err?.message || "";
+    if (msg.includes("fetch failed") || err?.code === "UND_ERR_CONNECT_TIMEOUT") {
+      return { error: "Authentication server timed out. The database may be waking up, please try again." };
+    }
+    return { error: msg || "Failed to create account. Please try again." };
   }
-
-  const { email, password } = parsed.data;
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  // If email confirmation is required and session is null
-  if (data?.user && !data?.session) {
-    return {
-      success: true,
-      requiresConfirmation: true,
-      message: "Verification email sent! Please check your inbox and click the link to activate your account."
-    };
-  }
-
-  revalidatePath("/dashboard");
-  redirect("/onboarding");
 }
 
 export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch (err: any) {
+    console.error("signOut error:", err);
+  }
   redirect("/");
 }
 
 export async function signInWithGithub() {
-  const supabase = await createClient();
-  const origin = (await headers()).get("origin");
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'github',
-    options: {
-      redirectTo: `${origin}/auth/callback`,
-    },
-  });
+  try {
+    const supabase = await createClient();
+    const origin = (await headers()).get("origin");
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${origin}/auth/callback`,
+      },
+    });
 
-  if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
-  }
+    if (error) {
+      redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    }
 
-  if (data.url) {
-    redirect(data.url);
+    if (data.url) {
+      redirect(data.url);
+    }
+  } catch (err: any) {
+    if (err?.digest?.includes("NEXT_REDIRECT") || err?.message?.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
+    console.error("signInWithGithub error:", err);
+    redirect(`/login?error=${encodeURIComponent("Failed to initialize GitHub login.")}`);
   }
 }
 

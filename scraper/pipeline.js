@@ -13,6 +13,8 @@ const { upsertData, normalizeString } = require('./upserter');
 const { notifyDiscord, notifyDiscordError } = require('./notifier');
 const { isRelevantForIndianStudent } = require('./utils/geo-filter');
 const { scrapeAtsCompanies } = require('./ats-companies');
+const { scrapeFreehire } = require('./freehire');
+const { scrapeWorkdayCompanies } = require('./workday-companies');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -509,6 +511,16 @@ async function main() {
 
     runPipelineSource('ats-companies', async () => {
       const structuredRecords = await scrapeAtsCompanies();
+      return { scrapedCount: structuredRecords.length, structuredRecords };
+    }, rateLimiter),
+
+    runPipelineSource('freehire', async () => {
+      const structuredRecords = await scrapeFreehire();
+      return { scrapedCount: structuredRecords.length, structuredRecords };
+    }, rateLimiter),
+
+    runPipelineSource('workday-companies', async () => {
+      const structuredRecords = await scrapeWorkdayCompanies();
       return { scrapedCount: structuredRecords.length, structuredRecords };
     }, rateLimiter)
   ]);
