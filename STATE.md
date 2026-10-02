@@ -24,7 +24,7 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **Admin Portal**: Server-gated (`ADMIN_EMAIL`) manual opportunity manager and GitHub Actions scraper trigger.
 - **Scraper Pipeline (13 sources)**:
   - 4-wave parallel/sequential execution (`pipeline.js`)
-  - **FreeHire Live API Ingestor** (`freehire.js`): High-throughput query engine querying FreeHire's open REST API across 92 ATS platforms, importing hundreds of verified Indian student/entry-level tech opportunities with direct company career links.
+  - **FreeHire Live API Ingestor** (`freehire.js`): Deep 32-page high-throughput query engine querying FreeHire's open REST API across 92 ATS platforms, expanding active opportunities to 1,545+ with direct company career links.
   - **Workday Enterprise Adapter** (`workday-companies.js`): Direct CXS JSON API client pulling student and early-career tech listings for Fortune 500 MNCs (Nvidia, Adobe, Salesforce, Target) without headless browser overhead.
   - **Direct ATS Company Career Scraper** (`ats-companies.js` + `companies.json`): Scaled company registry with verified active endpoints across Greenhouse, Lever, Ashby, and SmartRecruiters (including Paytm, Meesho, CRED, InMobi, Sarvam AI, Mindtickle, Rubrik, Thoughtworks, Stripe) with stale job reconciliation.
   - **Primary LLM Structuring (NVIDIA NIM)**: `structurer.js` upgraded to use NVIDIA NIM (`meta/llama-3.2-11b-vision-instruct`) with sub-second latency, rigorous JSON validation, and intelligent date/eligibility extraction.
