@@ -10,8 +10,8 @@ const ipv4Agent = new https.Agent({ family: 4, keepAlive: true });
 // Roles to strictly exclude (Seniority)
 const EXCLUDE_ROLE_REGEX = /\b(senior|staff|principal|lead|director|vp|vice president|manager|head of|5\+|6\+|7\+|8\+|10\+ years)\b/i;
 
-// Roles must contain at least one technical keyword
-const TECH_KEYWORD_REGEX = /\b(developer|software|engineer|engineering|data|ai|ml|machine learning|artificial intelligence|cloud|backend|frontend|fullstack|web|devops|security|cyber|qa|testing|mobile|ios|android|systems|infrastructure|analytics|analyst|architect|network|programmer|coder|sde)\b/i;
+// Roles must contain at least one technical or early-career keyword
+const TECH_KEYWORD_REGEX = /\b(developer|software|engineer|engineering|data|ai|ml|machine learning|artificial intelligence|cloud|backend|frontend|fullstack|web|devops|security|cyber|qa|sdet|testing|mobile|ios|android|systems|infrastructure|analytics|analyst|architect|network|programmer|coder|sde|trainee|fresher|graduate|tech|technology|research|embedded|firmware|iot|ui|ux|product designer|technical)\b/i;
 
 /**
  * Strips tracking parameters and normalizes application URLs
@@ -70,13 +70,7 @@ function deriveDomainTags(title, desc = '', skills = []) {
   if (/\b(frontend|react|angular|vue|nextjs|tailwind|ui|ux|css|html|javascript|typescript)\b/.test(combined)) {
     tags.add('frontend');
   }
-  if (/\b(fullstack|full-stack|full stack)\b/.test(combined)) {
-    tags.add('fullstack');
-  }
-  if (/\b(data|analyst|analytics|data science|etl|bi|tableau|power bi|pandas|numpy)\b/.test(combined)) {
-    tags.add('data');
-  }
-  if (/\b(devops|cloud|aws|azure|gcp|docker|kubernetes|ci\/cd|terraform|infra)\b/.test(combined)) {
+  if (/\b(devops|docker|kubernetes|aws|azure|gcp|terraform|ci\/cd|pipeline|cloud)\b/.test(combined)) {
     tags.add('devops');
   }
   if (/\b(security|cyber|infosec|penetration|soc)\b/.test(combined)) {
@@ -88,6 +82,9 @@ function deriveDomainTags(title, desc = '', skills = []) {
   if (/\b(qa|sdet|quality assurance|testing|test automation|selenium|cypress|playwright)\b/.test(combined)) {
     tags.add('qa');
   }
+  if (/\b(data|analyst|analytics|bi|tableau|power bi|pandas|numpy)\b/.test(combined)) {
+    tags.add('data');
+  }
 
   if (tags.size === 0) tags.add('software-engineering');
   return Array.from(tags).slice(0, 4);
@@ -95,19 +92,36 @@ function deriveDomainTags(title, desc = '', skills = []) {
 
 /**
  * Scrapes fresh Indian tech internships, junior roles, and MNC opportunities from FreeHire API
+ * with deep multi-page pagination.
  */
 async function scrapeFreehire() {
-  console.log('[FreeHire Scraper] Querying FreeHire open REST API for Indian opportunities...');
+  console.log('[FreeHire Scraper] Querying FreeHire open REST API with expanded deep pagination...');
 
-  const endpoints = [
-    // 1. Tech Internships in India (Page 1 & 2)
-    { name: 'Internships (Page 1)', url: 'https://freehire.me/api/v1/jobs/search?countries=IN&employment_type=internship&is_tech=tech&limit=100&offset=0' },
-    { name: 'Internships (Page 2)', url: 'https://freehire.me/api/v1/jobs/search?countries=IN&employment_type=internship&is_tech=tech&limit=100&offset=100' },
-    // 2. Tech Fresher / Junior roles in India (Page 1 & 2)
-    { name: 'Junior Roles (Page 1)', url: 'https://freehire.me/api/v1/jobs/search?countries=IN&seniority=intern,junior&is_tech=tech&limit=100&offset=0' },
-    { name: 'Junior Roles (Page 2)', url: 'https://freehire.me/api/v1/jobs/search?countries=IN&seniority=intern,junior&is_tech=tech&limit=100&offset=100' },
-    // 3. Fortune 500 / Big Tech MNC hubs in India
-    { name: 'MNC Hubs', url: 'https://freehire.me/api/v1/jobs/search?countries=IN&collections=bigtech,fortune500,mag7&limit=100' }
+  const categories = [
+    // 1. Tech Internships in India (Paginating up to 10 pages -> 1,000 listings)
+    {
+      name: 'Indian Internships',
+      baseUrl: 'https://freehire.me/api/v1/jobs/search?countries=IN&employment_type=internship&limit=100',
+      maxPages: 10
+    },
+    // 2. Junior / Fresher Roles in India (Paginating up to 12 pages -> 1,200 listings)
+    {
+      name: 'Indian Junior & Fresher Roles',
+      baseUrl: 'https://freehire.me/api/v1/jobs/search?countries=IN&seniority=intern,junior&limit=100',
+      maxPages: 12
+    },
+    // 3. Fortune 500 / Big Tech MNC hubs in India (Paginating up to 5 pages -> 500 listings)
+    {
+      name: 'MNC Hubs (BigTech, Fortune 500)',
+      baseUrl: 'https://freehire.me/api/v1/jobs/search?countries=IN&collections=bigtech,fortune500,mag7&limit=100',
+      maxPages: 5
+    },
+    // 4. Remote Junior / Intern Roles (Paginating up to 5 pages -> 500 listings)
+    {
+      name: 'Remote Junior & Intern Roles',
+      baseUrl: 'https://freehire.me/api/v1/jobs/search?work_mode=remote&seniority=intern,junior&limit=100',
+      maxPages: 5
+    }
   ];
 
   const seenUrls = new Set();
@@ -115,85 +129,106 @@ async function scrapeFreehire() {
   const now = new Date();
   const rollingDeadline = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-  for (const ep of endpoints) {
-    try {
-      console.log(`[FreeHire Scraper] Fetching ${ep.name}...`);
-      const response = await axios.get(ep.url, {
-        httpsAgent: ipv4Agent,
-        timeout: 15000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) OpportunityHubIndia/1.0',
-          'Accept': 'application/json'
-        }
-      });
+  for (const cat of categories) {
+    console.log(`[FreeHire Scraper] Paginating ${cat.name} (up to ${cat.maxPages} pages)...`);
 
-      const jobs = response.data?.data || [];
-      console.log(`  -> Retrieved ${jobs.length} raw jobs from ${ep.name}.`);
+    for (let page = 0; page < cat.maxPages; page++) {
+      const offset = page * 100;
+      const url = `${cat.baseUrl}&offset=${offset}`;
 
-      for (const job of jobs) {
-        if (!job.title || !job.url || !job.company) continue;
-
-        // Skip aggregator/telegram channel links — keep 100% direct company career portals
-        if (job.source === 'telegram' || job.url.includes('t.me')) continue;
-
-        const cleanUrl = canonicalizeUrl(job.url);
-        if (!cleanUrl || seenUrls.has(cleanUrl)) continue;
-
-        const title = job.title.trim();
-
-        // Filter out senior roles
-        if (EXCLUDE_ROLE_REGEX.test(title)) continue;
-
-        // Ensure tech relevance
-        const skills = Array.isArray(job.skills) ? job.skills : [];
-        if (!TECH_KEYWORD_REGEX.test(title) && skills.length === 0 && job.is_tech !== 'tech') {
-          continue;
-        }
-
-        // Location verification
-        const rawLocation = job.location || (job.cities && job.cities.length > 0 ? job.cities.join(', ') : 'India');
-        const descText = cleanDescription(job.description);
-
-        if (!isRelevantForIndianStudent(String(rawLocation || ''), descText)) {
-          continue;
-        }
-
-        seenUrls.add(cleanUrl);
-
-        const isIntern = (
-          job.enrichment?.employment_type === 'internship' ||
-          job.enrichment?.seniority === 'intern' ||
-          /\b(intern|internship|trainee|apprentice)\b/i.test(title)
-        );
-
-        let workMode = 'in-office';
-        if (job.work_mode === 'remote') workMode = 'remote';
-        else if (job.work_mode === 'hybrid') workMode = 'hybrid';
-
-        const domainTags = deriveDomainTags(title, descText, skills);
-
-        opportunities.push({
-          id: uuidv4(),
-          title: `${job.company} - ${title}`,
-          company: job.company,
-          type: isIntern ? 'internship' : 'full-time',
-          location: rawLocation,
-          mode: workMode,
-          description: descText || `${title} at ${job.company}. Direct application via official career portal.`,
-          source_url: cleanUrl,
-          deadline: rollingDeadline,
-          source_of_deadline: 'Rolling',
-          domain_tags: domainTags,
-          effort_level: 'medium',
-          competitiveness: 'high',
-          eligibility: isIntern ? { year: [2, 3, 4] } : { segments: ['4th year', 'postgraduate'] },
-          deadline_confidence: 'unknown',
-          is_active: true,
-          source: 'freehire'
+      try {
+        const response = await axios.get(url, {
+          httpsAgent: ipv4Agent,
+          timeout: 15000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) OpportunityHubIndia/1.0',
+            'Accept': 'application/json'
+          }
         });
+
+        const jobs = response.data?.data || [];
+        const totalAvailable = response.data?.meta?.total || 0;
+
+        if (jobs.length === 0) break;
+
+        let pageAccepted = 0;
+        for (const job of jobs) {
+          if (!job.title || !job.url || !job.company) continue;
+
+          // Skip aggregator/telegram links — keep 100% direct company career portals
+          if (job.source === 'telegram' || job.url.includes('t.me')) continue;
+
+          const cleanUrl = canonicalizeUrl(job.url);
+          if (!cleanUrl || seenUrls.has(cleanUrl)) continue;
+
+          const title = job.title.trim();
+
+          // Filter out senior roles
+          if (EXCLUDE_ROLE_REGEX.test(title)) continue;
+
+          // Ensure tech / early-career relevance
+          const skills = Array.isArray(job.skills) ? job.skills : [];
+          if (!TECH_KEYWORD_REGEX.test(title) && skills.length === 0 && job.is_tech !== 'tech') {
+            continue;
+          }
+
+          // Location verification
+          const rawLocation = job.location || (job.cities && job.cities.length > 0 ? job.cities.join(', ') : 'India');
+          const descText = cleanDescription(job.description);
+
+          if (!isRelevantForIndianStudent(String(rawLocation || ''), descText)) {
+            continue;
+          }
+
+          seenUrls.add(cleanUrl);
+          pageAccepted++;
+
+          const isIntern = (
+            job.enrichment?.employment_type === 'internship' ||
+            job.enrichment?.seniority === 'intern' ||
+            /\b(intern|internship|trainee|apprentice)\b/i.test(title)
+          );
+
+          let workMode = 'in-office';
+          if (job.work_mode === 'remote') workMode = 'remote';
+          else if (job.work_mode === 'hybrid') workMode = 'hybrid';
+
+          const domainTags = deriveDomainTags(title, descText, skills);
+
+          opportunities.push({
+            id: uuidv4(),
+            title: `${job.company} - ${title}`,
+            company: job.company,
+            type: isIntern ? 'internship' : 'full-time',
+            location: rawLocation,
+            mode: workMode,
+            description: descText || `${title} at ${job.company}. Direct application via official career portal.`,
+            source_url: cleanUrl,
+            deadline: rollingDeadline,
+            source_of_deadline: 'Rolling',
+            domain_tags: domainTags,
+            effort_level: 'medium',
+            competitiveness: 'high',
+            eligibility: isIntern ? { year: [2, 3, 4] } : { segments: ['4th year', 'postgraduate'] },
+            deadline_confidence: 'unknown',
+            is_active: true,
+            source: 'freehire'
+          });
+        }
+
+        console.log(`  -> Page ${page + 1} (${offset}-${offset + jobs.length}/${totalAvailable}): +${pageAccepted} accepted (Total: ${opportunities.length})`);
+
+        if (offset + jobs.length >= totalAvailable) {
+          console.log(`  -> Reached end of ${cat.name} (${totalAvailable} total jobs).`);
+          break;
+        }
+
+        // Brief delay between page requests
+        await new Promise(r => setTimeout(r, 250));
+      } catch (err) {
+        console.warn(`  -> Warning on ${cat.name} page ${page + 1}: ${err.message}`);
+        break;
       }
-    } catch (err) {
-      console.warn(`[FreeHire Scraper] Warning: Failed to fetch ${ep.name}: ${err.message}`);
     }
   }
 
@@ -205,21 +240,16 @@ async function scrapeFreehire() {
 if (require.main === module) {
   (async () => {
     try {
-      console.log('=== RUNNING FREEHIRE STANDALONE TEST ===');
+      console.log('=== RUNNING FREEHIRE EXPANDED INGESTION ===');
       const isDryRun = process.argv.includes('--dry-run');
       const results = await scrapeFreehire();
-      console.log(`\nSuccessfully scraped ${results.length} eligible opportunities:`);
-
-      if (results.length > 0) {
-        console.log('\n--- SAMPLE LISTINGS ---');
-        console.dir(results.slice(0, 5), { depth: null });
-      }
+      console.log(`\nSuccessfully scraped ${results.length} eligible opportunities!`);
 
       if (!isDryRun && results.length > 0 && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
         const { upsertData } = require('./upserter');
         console.log(`\nUpserting ${results.length} records to Supabase...`);
         const upsertRes = await upsertData(results, process.env.SUPABASE_SERVICE_KEY);
-        console.log('Upsert result:', upsertRes);
+        console.log('Upsert complete! Summary:', upsertRes);
       } else if (isDryRun) {
         console.log('\n[Dry Run] Skipped database write.');
       }
