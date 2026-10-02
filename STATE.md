@@ -27,7 +27,8 @@ Active development — Core platform is built, deployed, and operational. Focus 
   - **FreeHire Live API Ingestor** (`freehire.js`): High-throughput query engine querying FreeHire's open REST API across 92 ATS platforms, importing hundreds of verified Indian student/entry-level tech opportunities with direct company career links.
   - **Workday Enterprise Adapter** (`workday-companies.js`): Direct CXS JSON API client pulling student and early-career tech listings for Fortune 500 MNCs (Nvidia, Adobe, Salesforce, Target) without headless browser overhead.
   - **Direct ATS Company Career Scraper** (`ats-companies.js` + `companies.json`): Scaled company registry with verified active endpoints across Greenhouse, Lever, Ashby, and SmartRecruiters (including Paytm, Meesho, CRED, InMobi, Sarvam AI, Mindtickle, Rubrik, Thoughtworks, Stripe) with stale job reconciliation.
-  - Groq LLM structuring (`openai/gpt-oss-20b`) with 300-call budget and `pending_processing` overflow queue
+  - **Primary LLM Structuring (NVIDIA NIM)**: `structurer.js` upgraded to use NVIDIA NIM (`meta/llama-3.2-11b-vision-instruct`) with sub-second latency, rigorous JSON validation, and intelligent date/eligibility extraction.
+  - **Fallback LLM Structuring**: Seamless cascade to Groq (`openai/gpt-oss-20b`) and Gemini with 300-call budget and `pending_processing` overflow queue
   - Two-layer deduplication (`source_url` conflict + `deduplicate_opportunities()` RPC)
   - Strict India-focused filtering (`geo-filter.js`)
   - Discord webhook alerts (digests and failure logs)
@@ -37,7 +38,7 @@ Active development — Core platform is built, deployed, and operational. Focus 
   - Scheduled daily at 00:00 UTC via `pg_cron` + `pg_net` + Supabase Vault
   - Consolidates opportunities closing in 3 days into a single digest email per user via Resend API
 - **Infrastructure Automation**:
-  - GitHub Actions daily scrape cron (`scrape.yml` at 00:00 UTC) with Playwright browser installation
+  - GitHub Actions daily scrape cron (`scrape.yml` at 00:00 UTC) with Playwright browser installation and `NVIDIA_API_KEY` injection
   - Supabase 4-day keepalive workflow (`keepalive-supabase.yml`)
   - GitHub Actions bi-monthly activity keepalive (`keepalive-workflow.yml`)
   - Vercel production deployment
@@ -45,8 +46,8 @@ Active development — Core platform is built, deployed, and operational. Focus 
 ## What Is Partially Working / Needs Attention
 
 - **Devfolio Scraper**: Relies on styled-component class prefix matching in DOM; breaks if Devfolio updates frontend classes.
-- **Gemini LLM Structuring**: Circuit breaker hardcoded to `true` (`isGeminiDailyExhausted = true` in `structurer.js`) due to free-tier 403 errors; structuring currently relies 100% on Groq.
-- **Environment Validation Gap**: `validate-env.js` checks for `GEMINI_API_KEY` but does not validate `GROQ_API_KEY`.
+- **Gemini LLM Structuring**: Circuit breaker hardcoded to `true` (`isGeminiDailyExhausted = true` in `structurer.js`) due to free-tier 403 errors; structuring currently uses NVIDIA NIM as primary and Groq as secondary.
+- **Environment Validation Gap**: `validate-env.js` checks for `GEMINI_API_KEY` but does not validate `GROQ_API_KEY` or `NVIDIA_API_KEY`.
 - **Vercel Project Target Mismatch**: Root `.vercel/project.json` targets `opportunity-hub-india` while `frontend/.vercel/project.json` targets `frontend`.
 - **`frontend/DESIGN.md` Divergence**: The design file references a legacy restaurant POS spec, whereas the actual codebase implements the Obsidian/Zinc developer design system (`globals.css`).
 - **Profile Page**: `/profile` currently redirects directly to `/onboarding`.
