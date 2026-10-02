@@ -12,6 +12,7 @@ const { scrapeKaggle } = require('./kaggle');
 const { upsertData, normalizeString } = require('./upserter');
 const { notifyDiscord, notifyDiscordError } = require('./notifier');
 const { isRelevantForIndianStudent } = require('./utils/geo-filter');
+const { scrapeAtsCompanies } = require('./ats-companies');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -503,6 +504,11 @@ async function main() {
 
     runPipelineSource('static', async () => {
       const structuredRecords = await getStaticOpportunities();
+      return { scrapedCount: structuredRecords.length, structuredRecords };
+    }, rateLimiter),
+
+    runPipelineSource('ats-companies', async () => {
+      const structuredRecords = await scrapeAtsCompanies();
       return { scrapedCount: structuredRecords.length, structuredRecords };
     }, rateLimiter)
   ]);

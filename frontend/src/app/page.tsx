@@ -1,17 +1,19 @@
 import Link from "next/link";
-import { Compass, Zap, Target, Brain, ArrowRight, Briefcase, Code as CodeIcon, Flame, Star } from "lucide-react";
+import { Compass, Zap, Target, Brain, ArrowRight, Flame, Star, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
+import { ContainerScroll } from "@/components/ui/container-scroll-animation";
+import { getBrandInfo } from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Opportunity Hub — Internships, Hackathons & Fellowships for Indian CS Students 🇮🇳",
-  description: "Stop missing deadlines. Discover and track 2,000+ verified tech internships, hackathons, and open-source programs ranked for your profile.",
+  description: "Stop missing deadlines. Discover and track 460+ verified tech internships, hackathons, and open-source programs ranked for your profile.",
   metadataBase: new URL('https://opportunity-hub-india.vercel.app'),
   openGraph: {
     title: "Opportunity Hub — Tech Opportunities for Indian CS Students 🇮🇳",
-    description: "Discover and track 2,000+ verified internships, hackathons, and open-source programs ranked for your profile.",
+    description: "Discover and track 460+ verified internships, hackathons, and open-source programs ranked for your profile.",
     url: "https://opportunity-hub-india.vercel.app",
     siteName: "Opportunity Hub",
     locale: "en_IN",
@@ -20,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Opportunity Hub — Tech Opportunities for Indian CS Students 🇮🇳",
-    description: "Discover and track 2,000+ verified internships, hackathons, and open-source programs ranked for your profile.",
+    description: "Discover and track 460+ verified internships, hackathons, and open-source programs ranked for your profile.",
   },
 };
 
@@ -64,8 +66,8 @@ function cleanTags(tags: string[] | undefined, max = 3): string[] {
 export default async function LandingPage() {
   const supabase = await createClient();
 
-  // 1. Fetch real dynamic count of live opportunities
-  let totalCount = 2000;
+  // 1. Fetch real count of live opportunities
+  let totalCount = 465;
   try {
     const { count } = await supabase
       .from("opportunities")
@@ -73,7 +75,7 @@ export default async function LandingPage() {
       .eq("is_active", true);
     if (count) totalCount = count;
   } catch (err) {
-    console.error("Could not fetch opportunity count for landing page:", err);
+    console.error("Could not fetch opportunity count:", err);
   }
 
   // 2. Fetch real live opportunities for preview
@@ -81,7 +83,7 @@ export default async function LandingPage() {
   try {
     const { data } = await supabase
       .from("opportunities")
-      .select("id, title, type, deadline, domain_tags, effort_level, competitiveness")
+      .select("id, title, type, deadline, domain_tags, effort_level, competitiveness, source_url")
       .eq("is_active", true)
       .not("deadline", "is", null)
       .gt("deadline", new Date().toISOString())
@@ -95,216 +97,197 @@ export default async function LandingPage() {
     console.error("Could not fetch featured opportunities:", err);
   }
 
-  // Fallback items if database had no upcoming deadlines
   if (featuredOpps.length === 0) {
     featuredOpps = [
       {
         id: "f1",
-        title: "Software Engineering Internship",
+        title: "Software Development Engineer Intern",
         type: "internship",
         deadline: new Date(Date.now() + 14 * 86400000).toISOString(),
-        domain_tags: ["C++", "Java", "Backend"],
+        domain_tags: ["Java", "C++", "Backend"],
         effort_level: "Medium",
         competitiveness: "High",
+        source_url: "https://amazon.jobs",
       },
       {
         id: "f2",
-        title: "National AI & Cloud Hackathon",
+        title: "ETHIndia 2026 — Asia's Biggest Web3 Hackathon",
         type: "hackathon",
         deadline: new Date(Date.now() + 7 * 86400000).toISOString(),
-        domain_tags: ["AI/ML", "React", "Python"],
+        domain_tags: ["Solidity", "React", "Web3"],
         effort_level: "High",
         competitiveness: "Medium",
+        source_url: "https://devfolio.co",
       },
       {
         id: "f3",
-        title: "Open Source Fellowship Program",
+        title: "Google Summer of Code 2026",
         type: "open-source program",
         deadline: new Date(Date.now() + 21 * 86400000).toISOString(),
-        domain_tags: ["Python", "Git", "TypeScript"],
+        domain_tags: ["Python", "Git", "Rust"],
         effort_level: "Low",
         competitiveness: "Medium",
+        source_url: "https://summerofcode.withgoogle.com",
       },
     ];
   }
 
   return (
-    <div className="w-full min-h-screen overflow-x-hidden overflow-y-auto bg-background text-text-main flex flex-col relative selection:bg-primary/20">
+    <div className="w-full min-h-screen overflow-x-hidden overflow-y-auto bg-[#09090b] text-[#ededed] flex flex-col relative selection:bg-zinc-800 selection:text-white">
 
-      {/* Dot-grid background */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px)",
-          backgroundSize: "26px 26px",
-        }}
-      />
-
-      {/* Atmospheric blobs */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-12%] left-[-8%] w-[42%] h-[42%] bg-primary/12 blur-[90px] rounded-full" />
-        <div className="absolute bottom-[-12%] right-[-8%] w-[36%] h-[36%] bg-secondary/10 blur-[100px] rounded-full" />
+      {/* Atmospheric subtle radial glow */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[55rem] h-[35rem] bg-zinc-800/20 blur-[130px] rounded-full" />
       </div>
 
       {/* ── Navigation ── */}
-      <nav className="w-full px-4 sm:px-8 py-0 h-[58px] sm:h-[60px] flex items-center justify-between z-50 border-b border-surface-high/20 sticky top-0 bg-background/90 backdrop-blur-xl">
+      <nav className="w-full px-4 sm:px-8 h-15 flex items-center justify-between z-50 border-b border-zinc-800/80 sticky top-0 bg-[#09090b]/80 backdrop-blur-xl">
         <div className="flex items-center gap-2.5">
-          <div className="w-[30px] h-[30px] rounded-[9px] bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-[0_0_16px_rgba(34,197,94,0.28)]">
-            <Compass size={14} className="text-background" strokeWidth={2.5} />
+          <div className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs shadow-md">
+            <Compass size={15} strokeWidth={2.4} />
           </div>
-          <span className="font-black text-[17px] tracking-tight">Opp<span className="text-primary">Hub</span></span>
+          <span className="font-bold text-base tracking-tight text-white">
+            Opportunity<span className="text-zinc-400 font-normal">Hub</span>
+          </span>
         </div>
         <Link
           href="/login"
-          className="px-4 sm:px-5 py-[6px] sm:py-[7px] rounded-full border border-surface-highest bg-surface-low hover:bg-surface-high transition-colors font-semibold text-[12.5px] sm:text-[13px] active:scale-95"
+          className="px-4 py-1.5 rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 transition-colors font-medium text-xs text-white"
         >
           Sign In
         </Link>
       </nav>
 
-      {/* ── Hero ── */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 sm:py-16 z-10 text-center max-w-4xl mx-auto">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-[5px] rounded-full bg-primary/8 border border-primary/22 text-primary text-[10.5px] sm:text-[11px] font-bold tracking-[0.04em] mb-6 sm:mb-7">
-          <span className="w-[6px] h-[6px] rounded-full bg-primary animate-live" />
-          ⚡ Intelligence for Indian CS Students
-        </div>
-
-        <h1 className="text-[clamp(34px,8vw,76px)] font-black tracking-[-0.04em] leading-[0.95] mb-4 sm:mb-5">
-          Find the{" "}
-          <span
-            className="bg-clip-text text-transparent"
-            style={{ backgroundImage: "linear-gradient(120deg, #22c55e 0%, #86efac 45%, #38bdf8 100%)" }}
-          >
-            signal
-          </span>
-          <br />in the noise.
-        </h1>
-
-        <p className="text-[14.5px] sm:text-[16px] text-text-muted max-w-[480px] mb-8 leading-[1.65] font-[450] px-2">
-          Stop browsing irrelevant listings. We aggregate the best tech internships, hackathons, and open-source programs — ranked to match your exact profile.
-        </p>
-
-        <Link
-          href="/login"
-          className="group inline-flex items-center justify-center gap-2 bg-text-main text-background px-7 sm:px-8 py-[12px] sm:py-[13px] rounded-full font-black text-[14px] sm:text-[15px] hover:scale-[1.04] active:scale-[0.97] transition-all duration-300 shadow-[0_0_0_rgba(241,241,243,0)] w-full sm:w-auto max-w-[280px]"
-        >
-          Start Exploring
-          <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
-        </Link>
-
-        {/* ── Real Dynamic Social Proof ── */}
-        <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[10.5px] sm:text-[11px] text-text-muted font-semibold tracking-[0.03em] px-2">
-          <span>{totalCount.toLocaleString()}+ opportunities tracked</span>
-          <span className="w-1 h-1 rounded-full bg-surface-highest hidden sm:inline-block" />
-          <span>Live aggregation</span>
-          <span className="w-1 h-1 rounded-full bg-surface-highest hidden sm:inline-block" />
-          <span>Profile-based ranking</span>
-        </div>
-      </main>
-
-      {/* ── Real Live Featured Opportunities ── */}
-      <section className="w-full max-w-[1000px] mx-auto px-4 sm:px-8 pb-12 sm:pb-14 z-10">
-        <h2 className="text-center text-[10px] font-bold tracking-[0.15em] text-text-muted uppercase mb-4 sm:mb-5">
-          Live & Upcoming Opportunities
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
-          {featuredOpps.map((opp) => {
-            const tags = cleanTags(opp.domain_tags, 3);
-            const isHackathon = (opp.type || '').toLowerCase().includes("hack");
-            const isIntern = (opp.type || '').toLowerCase().includes("intern");
-
-            return (
-              <div
-                key={opp.id}
-                className="relative bg-surface-low/80 backdrop-blur-md border border-surface-high/40 p-4 sm:p-5 rounded-[16px] sm:rounded-[18px] flex flex-col gap-3 hover:border-primary/25 hover:-translate-y-[2px] hover:shadow-2xl transition-all duration-200 group overflow-hidden"
-              >
-                {/* Subtle inner glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] to-transparent pointer-events-none" />
-
-                <div className="flex justify-between items-center relative">
-                  <div className={`w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center ${
-                    isHackathon ? "bg-secondary/10 text-secondary" : isIntern ? "bg-primary/10 text-primary" : "bg-warning/10 text-warning"
-                  }`}>
-                    {isHackathon ? <CodeIcon size={17} /> : isIntern ? <Briefcase size={17} /> : <Star size={17} />}
-                  </div>
-                  <span className={`text-[8.5px] sm:text-[9px] font-bold uppercase tracking-[0.09em] px-[8px] sm:px-[9px] py-[3px] rounded-full border ${
-                    isHackathon
-                      ? "text-secondary border-secondary/20 bg-secondary/10"
-                      : isIntern
-                      ? "text-primary border-primary/20 bg-primary/10"
-                      : "text-warning border-warning/20 bg-warning/10"
-                  }`}>
-                    {opp.type}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-[13.5px] sm:text-[14px] font-bold leading-[1.35] group-hover:text-primary transition-colors line-clamp-2">
-                    {opp.title}
-                  </h3>
-                </div>
-
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-[4px] sm:gap-[5px]">
-                    {tags.map(t => (
-                      <span key={t} className="text-[9.5px] sm:text-[10px] bg-surface-high/50 text-text-muted px-2 py-[2.5px] sm:py-[3px] rounded-[5px] sm:rounded-[6px] font-mono border border-surface-highest/50">
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-auto pt-2.5 sm:pt-3 border-t border-surface-high/30 flex items-center justify-between text-[9.5px] sm:text-[10px] font-semibold text-text-muted">
-                  <span className="flex items-center gap-1 text-primary">
-                    <Flame size={11} />
-                    {opp.competitiveness || "Standard"}
-                  </span>
-                  <span className="font-mono text-text-muted">{formatDeadline(opp.deadline)}</span>
-                </div>
+      {/* ── Hero with 3D Container Scroll ── */}
+      <div className="z-10 pt-8 sm:pt-14">
+        <ContainerScroll
+          titleComponent={
+            <div className="flex flex-col items-center px-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-mono mb-6">
+                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                ⚡ {totalCount.toLocaleString()}+ Verified Active Listings for Indian CS Students
               </div>
-            );
-          })}
-        </div>
-      </section>
+
+              <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white max-w-4xl leading-[1.02] mb-6">
+                Find the signal <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-200 via-white to-zinc-400">
+                  in the noise.
+                </span>
+              </h1>
+
+              <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto mb-8 leading-relaxed font-normal">
+                Stop browsing expired or spam listings. Discover and track verified internships, hackathons, and open-source programs curated and ranked for your exact profile.
+              </p>
+
+              <div className="flex items-center justify-center gap-3">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center gap-2 bg-white text-black px-6 sm:px-8 py-3 rounded-xl font-semibold text-sm hover:bg-zinc-200 active:scale-[0.98] transition-all duration-200 shadow-lg"
+                >
+                  Start Exploring Free
+                  <ArrowRight size={15} />
+                </Link>
+              </div>
+            </div>
+          }
+        >
+          {/* Inside 3D perspective card: Live preview mockup */}
+          <div className="w-full h-full p-3 sm:p-5 flex flex-col gap-2.5 overflow-hidden bg-[#09090b] rounded-xl text-left">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3 mb-1">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-zinc-700" />
+                <span className="text-xs font-mono text-zinc-400">Dashboard Preview • Live Ranked Feed</span>
+              </div>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-zinc-800">
+                Calm List View
+              </span>
+            </div>
+
+            {featuredOpps.map((opp) => {
+              const brand = getBrandInfo(opp.title, opp.source_url, opp.type);
+              const tags = cleanTags(opp.domain_tags, 3);
+
+              return (
+                <div
+                  key={opp.id}
+                  className="w-full bg-[#121215] border border-zinc-800/80 rounded-xl p-3 flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-9 h-9 rounded-lg border flex items-center justify-center font-mono font-bold text-xs shrink-0 ${brand.badgeBg} ${brand.badgeText} ${brand.badgeBorder}`}>
+                      {brand.monogram}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs sm:text-sm text-white truncate">{opp.title}</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 hidden sm:inline">
+                          {opp.type}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-zinc-400 font-mono mt-0.5 block">
+                        {brand.label} • {formatDeadline(opp.deadline)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="hidden sm:flex gap-1 font-mono text-[10px]">
+                      {tags.map(t => (
+                        <span key={t} className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="px-3 py-1 rounded-md bg-white text-black font-semibold text-xs">
+                      Apply
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ContainerScroll>
+      </div>
 
       {/* ── Features ── */}
-      <section className="w-full max-w-[1000px] mx-auto px-4 sm:px-8 pb-16 sm:pb-20 z-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
-          <div className="bg-surface-low p-5 sm:p-7 rounded-[18px] sm:rounded-[20px] border border-surface-high/40 flex flex-col gap-3.5 sm:gap-4 hover:border-primary/20 transition-colors">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[11px] sm:rounded-[12px] bg-primary/10 flex items-center justify-center">
-              <Zap size={19} className="text-primary" />
+      <section className="w-full max-w-5xl mx-auto px-4 sm:px-8 py-16 sm:py-24 z-10">
+        <h2 className="text-center text-xs font-mono uppercase tracking-widest text-zinc-500 mb-8">
+          Designed for High-Agency Developers
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-[#121215] p-6 rounded-2xl border border-zinc-800/80 flex flex-col gap-3 hover:border-zinc-700 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white">
+              <Zap size={18} />
             </div>
             <div>
-              <h3 className="text-[14.5px] sm:text-[15px] font-bold mb-1.5 sm:mb-2">Automated Ingestion</h3>
-              <p className="text-[12.5px] sm:text-[13px] text-text-muted leading-[1.65]">Scrapes Devfolio, Unstop, GitHub, and Discord to aggregate verified developer opportunities.</p>
+              <h3 className="text-sm font-semibold text-white mb-1.5">Automated Ingestion</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">Continuous scrapers verify listings from Devfolio, Unstop, Codeforces, and GitHub so you never see dead links.</p>
             </div>
           </div>
 
-          <div className="bg-surface-low p-5 sm:p-7 rounded-[18px] sm:rounded-[20px] border border-surface-high/40 flex flex-col gap-3.5 sm:gap-4 hover:border-secondary/20 transition-colors">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[11px] sm:rounded-[12px] bg-secondary/10 flex items-center justify-center">
-              <Brain size={19} className="text-secondary" />
+          <div className="bg-[#121215] p-6 rounded-2xl border border-zinc-800/80 flex flex-col gap-3 hover:border-zinc-700 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white">
+              <Brain size={18} />
             </div>
             <div>
-              <h3 className="text-[14.5px] sm:text-[15px] font-bold mb-1.5 sm:mb-2">Smart Ranking</h3>
-              <p className="text-[12.5px] sm:text-[13px] text-text-muted leading-[1.65]">Filters out the noise by matching your specific tech stack, year of study, and career focus.</p>
+              <h3 className="text-sm font-semibold text-white mb-1.5">Zero Cognitive Overload</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">Switch seamlessly between a Calm List view for fast scanning and a Relaxed Grid view with rich details.</p>
             </div>
           </div>
 
-          <div className="bg-surface-low p-5 sm:p-7 rounded-[18px] sm:rounded-[20px] border border-surface-high/40 flex flex-col gap-3.5 sm:gap-4 hover:border-warning/20 transition-colors">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[11px] sm:rounded-[12px] bg-warning/10 flex items-center justify-center">
-              <Target size={19} className="text-warning" />
+          <div className="bg-[#121215] p-6 rounded-2xl border border-zinc-800/80 flex flex-col gap-3 hover:border-zinc-700 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white">
+              <Target size={18} />
             </div>
             <div>
-              <h3 className="text-[14.5px] sm:text-[15px] font-bold mb-1.5 sm:mb-2">Save & Track</h3>
-              <p className="text-[12.5px] sm:text-[13px] text-text-muted leading-[1.65]">Bookmark opportunities to your personal board and organize your application workflow.</p>
+              <h3 className="text-sm font-semibold text-white mb-1.5">Application Pipeline</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">Save opportunities with one click and track statuses from Saved → Applied → Accepted seamlessly.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="w-full py-6 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] text-center border-t border-surface-high/20 text-[11px] text-text-muted z-10">
+      <footer className="w-full py-6 px-4 text-center border-t border-zinc-800/80 text-xs text-zinc-500 font-mono z-10">
         © {new Date().getFullYear()} Opportunity Hub · Built for Indian CS Students 🇮🇳
       </footer>
     </div>

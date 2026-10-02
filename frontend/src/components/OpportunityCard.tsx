@@ -1,7 +1,10 @@
 "use client";
 
-import { Compass, Bookmark, Share2, Star } from "lucide-react";
+import React from "react";
+import { Bookmark, Share2, Star } from "lucide-react";
 import { Opportunity } from "@/types";
+import { getBrandInfo } from "@/lib/branding";
+import { computeMatchScore, cleanDomainTags } from "@/lib/opportunities";
 
 interface OpportunityCardProps {
   card: Opportunity;
@@ -15,107 +18,6 @@ interface OpportunityCardProps {
   onStatusChange: (id: string, newStatus: string) => void;
 }
 
-function computeMatchScore(opp: Opportunity, profile?: any): { score: number; label: string } {
-  if (!profile) {
-    return { score: 75, label: "match" };
-  }
-
-  let totalPoints = 0;
-  let earnedPoints = 0;
-
-  // 1. Tech stack match (45 points)
-  if (profile.tech_stack && Array.isArray(profile.tech_stack) && profile.tech_stack.length > 0) {
-    totalPoints += 45;
-    const oppText = `${opp.title || ''} ${(opp.domain_tags || []).join(' ')} ${opp.description || ''}`.toLowerCase();
-    const matches = profile.tech_stack.filter((tech: string) =>
-      oppText.includes(tech.toLowerCase())
-    ).length;
-    const ratio = Math.min(1, matches / Math.min(3, profile.tech_stack.length));
-    earnedPoints += Math.round(ratio * 45);
-  }
-
-  // 2. Role / Focus Area match (35 points)
-  if (profile.focus_area && opp.type) {
-    totalPoints += 35;
-    const focus = (profile.focus_area || '').toLowerCase();
-    const type = (opp.type || '').toLowerCase();
-    if (
-      (focus.includes('intern') && type.includes('intern')) ||
-      (focus.includes('hackathon') && type.includes('hackathon')) ||
-      (focus.includes('open source') && type.includes('open')) ||
-      (focus.includes('full-time') && type.includes('full'))
-    ) {
-      earnedPoints += 35;
-    } else {
-      earnedPoints += 10;
-    }
-  }
-
-  // 3. Eligibility / Year of study (20 points)
-  if (profile.current_year) {
-    totalPoints += 20;
-    if (opp.eligibility && typeof opp.eligibility === 'object' && Array.isArray((opp.eligibility as any).year)) {
-      const yearMap: Record<string, number> = { "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4, "Postgraduate": 5 };
-      const userYear = yearMap[profile.current_year];
-      if (userYear && (opp.eligibility as any).year.length > 0) {
-        if ((opp.eligibility as any).year.includes(userYear)) {
-          earnedPoints += 20;
-        }
-      } else {
-        earnedPoints += 20;
-      }
-    } else {
-      earnedPoints += 20;
-    }
-  }
-
-  const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 75;
-  const clampedScore = Math.min(99, Math.max(35, score));
-
-  return {
-    score: clampedScore,
-    label: clampedScore >= 80 ? "match" : clampedScore >= 60 ? "fit" : "match"
-  };
-}
-
-function cleanDomainTags(tags: string[] | undefined, maxTags = 4): { displayTags: string[], remainingCount: number } {
-  if (!tags || !Array.isArray(tags)) return { displayTags: [], remainingCount: 0 };
-
-  const cleanedSet = new Set<string>();
-  const allCleaned: string[] = [];
-
-  for (const rawTag of tags) {
-    if (!rawTag || typeof rawTag !== 'string') continue;
-
-    // Split on commas, semicolons, bullets, and newlines
-    const parts = rawTag
-      .replace(/[\u0000-\u001F\u007F-\u009F\uFFFD]/g, ' ')
-      .replace(/[•|·]/g, ',')
-      .split(/[,;\n]+/)
-      .map(t => t.trim());
-
-    for (const part of parts) {
-      // Clean leading/trailing non-alphanumeric symbols except #, +, .
-      const clean = part.replace(/^[^a-zA-Z0-9+#.]+|[^a-zA-Z0-9+#.]+$/g, '').trim();
-      if (!clean || clean.length < 2 || clean.length > 22) continue;
-
-      const lower = clean.toLowerCase();
-      // Filter out overly generic or noisy filler words
-      if (['good listener', 'presentation', 'reports', 'story-telling'].includes(lower)) continue;
-
-      if (!cleanedSet.has(lower)) {
-        cleanedSet.add(lower);
-        allCleaned.push(clean);
-      }
-    }
-  }
-
-  const displayTags = allCleaned.slice(0, maxTags);
-  const remainingCount = Math.max(0, allCleaned.length - maxTags);
-
-  return { displayTags, remainingCount };
-}
-
 export default function OpportunityCard({
   card,
   status,
@@ -127,6 +29,7 @@ export default function OpportunityCard({
   onStar,
   onStatusChange,
 }: OpportunityCardProps) {
+  const brand = getBrandInfo(card.title, card.source_url, card.type);
 
   // Deadline calculation
   const today = new Date();
@@ -139,8 +42,7 @@ export default function OpportunityCard({
   // Real computed match score from user profile
   const { score: matchScore, label: matchLabel } = computeMatchScore(card, profile);
   const matchBarWidth = `${matchScore}%`;
-  const matchColor =
-    matchScore >= 80 ? "bg-primary" : matchScore >= 60 ? "bg-warning" : "bg-error";
+  const matchColor = matchScore >= 80 ? "bg-white" : matchScore >= 60 ? "bg-amber-400" : "bg-rose-400";
 
   const { displayTags, remainingCount } = cleanDomainTags(card.domain_tags, 3);
 
@@ -148,82 +50,88 @@ export default function OpportunityCard({
     <>
       {/* ── THE CARD ── */}
       <div
-        className="relative rounded-[2rem] sm:rounded-[2.5rem] bg-surface-low overflow-hidden border border-surface-high/30 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] shadow-2xl w-[calc(100vw-76px)] max-w-[370px] md:w-[calc(var(--card-size)*0.7)] h-[clamp(440px,76dvh,680px)] md:h-[var(--card-size)]"
-        style={{ '--card-size': 'min(82dvh, calc((100vw - var(--sidebar-width) - 80px) / 0.7))' } as React.CSSProperties}
+        className="relative rounded-[2rem] sm:rounded-[2.5rem] bg-[#121215] overflow-hidden border border-zinc-800/80 z-10 shrink-0 grid grid-rows-[auto_minmax(0,1fr)_auto] shadow-2xl w-[calc(100vw-24px)] sm:w-[calc(100vw-40px)] max-w-[410px] md:w-[calc(var(--card-size)*0.7)] h-[clamp(420px,calc(100dvh-140px-env(safe-area-inset-bottom,0px)),660px)] md:h-[var(--card-size)]"
+        style={{ '--card-size': 'min(82dvh, calc((100vw - 80px) / 0.7))' } as React.CSSProperties}
       >
-        {/* Inner top-left glow */}
-        <div className="absolute top-0 left-0 w-[80%] h-[45%] bg-gradient-to-br from-primary/8 via-primary/4 to-transparent blur-3xl pointer-events-none" />
+        {/* Inner top ambient glow */}
+        <div className="absolute top-0 left-0 w-full h-[35%] bg-gradient-to-b from-zinc-800/20 to-transparent blur-2xl pointer-events-none" />
 
         {/* ── TOP SECTION ── */}
         <div className="px-4 pt-5 pb-2 sm:px-6 sm:pt-6 sm:pb-3 flex justify-between items-start z-20 relative">
           <div className="flex flex-col gap-2">
             {/* Deadline badge */}
             {!isMounted ? (
-              <div className="h-5 w-18 bg-surface-high/50 rounded-md animate-shimmer" />
+              <div className="h-5 w-18 bg-zinc-800/50 rounded-md animate-shimmer" />
             ) : closingSoon ? (
-              <span className="inline-flex items-center gap-1.5 text-error font-bold text-[9px] tracking-[0.08em] uppercase border border-error/25 bg-error/10 px-2.5 py-[4px] rounded-[6px] self-start">
-                <span className="w-[5px] h-[5px] rounded-full bg-error animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 text-rose-400 font-bold text-[11px] font-mono tracking-wide uppercase border border-rose-500/25 bg-rose-500/10 px-2.5 py-[3px] rounded-md self-start">
+                <span className="w-[6px] h-[6px] rounded-full bg-rose-500 animate-pulse" />
                 {diffDays === 0 ? 'ENDS TODAY' : `ENDS IN ${diffDays}D`}
               </span>
             ) : diffDays > 0 ? (
-              <span className="inline-flex items-center gap-1.5 text-text-muted font-bold text-[9px] tracking-[0.08em] uppercase border border-surface-high bg-surface-high/40 px-2.5 py-[4px] rounded-[6px] self-start">
+              <span className="inline-flex items-center gap-1.5 text-zinc-400 font-medium text-[11px] font-mono tracking-wide uppercase border border-zinc-800 bg-zinc-900 px-2.5 py-[3px] rounded-md self-start">
                 ENDS IN {diffDays}D
               </span>
             ) : null}
 
             {/* Type badge */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-[4px] rounded-full bg-surface-high border border-surface-highest/60 text-[9.5px] font-bold tracking-[0.06em] text-text-main uppercase self-start">
-              <span className="w-[5px] h-[5px] rounded-full bg-primary shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-300 uppercase self-start">
+              <span className="w-[5px] h-[5px] rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.4)]" />
               {card.type}
             </div>
           </div>
 
-          {/* Match score — horizontal bar (top-right) */}
+          {/* Match score */}
           <div className="flex flex-col items-end gap-1 shrink-0 ml-2 min-w-[64px] sm:min-w-[72px]">
-            <div className="flex items-baseline gap-1">
-              <span className="text-[16px] sm:text-[18px] font-black text-text-main leading-none">{matchScore}%</span>
-              <span className="text-[8.5px] sm:text-[9px] font-bold text-text-muted uppercase tracking-wider">match</span>
+            <div className="flex items-baseline gap-1 font-mono">
+              <span className="text-[17px] sm:text-[19px] font-bold text-white leading-none">{matchScore}%</span>
+              <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">{matchLabel}</span>
             </div>
-            <div className="w-[64px] sm:w-[72px] h-[4.5px] bg-surface-highest rounded-full overflow-hidden">
+            <div className="w-[64px] sm:w-[72px] h-[4px] bg-zinc-800 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full ${matchColor} transition-all duration-700`}
                 style={{ width: matchBarWidth }}
               />
             </div>
-            <span className="text-[8.5px] sm:text-[9px] text-text-muted font-medium">for you</span>
+            <span className="text-[10.5px] text-zinc-400 font-medium">for you</span>
           </div>
         </div>
 
         {/* ── MIDDLE — scrollable content ── */}
         <div className="min-h-0 flex flex-col items-center justify-center px-4 py-2 sm:px-6 sm:py-4 z-10 overflow-y-auto hide-scrollbar text-center">
-          {/* Company icon */}
-          <div className="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-[12px] sm:rounded-[14px] bg-gradient-to-br from-surface-high to-surface-highest border border-primary/15 mb-2.5 sm:mb-4 flex items-center justify-center shadow-[0_0_18px_rgba(0,0,0,0.25)]">
-            <Compass size={22} className="text-primary" />
+          {/* Brand Monogram Icon */}
+          <div
+            className={`w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl border mb-3 flex items-center justify-center font-mono font-bold text-base sm:text-lg shadow-xl ${brand.badgeBg} ${brand.badgeText} ${brand.badgeBorder}`}
+          >
+            {brand.monogram}
           </div>
 
-          <h2 className="text-[15px] sm:text-[18px] font-bold leading-[1.3] tracking-tight text-text-main line-clamp-2 pb-0.5 shrink-0 px-1">
+          <h2 className="text-[16px] sm:text-[18px] font-bold leading-snug tracking-tight text-white line-clamp-2 pb-0.5 shrink-0 px-1">
             {card.title}
           </h2>
 
+          <p className="text-xs text-zinc-400 mt-1 font-medium">
+            {brand.label} • {card.location || "Remote / India"}
+          </p>
+
           {card.description && (
-            <p className="text-[11.5px] sm:text-[13px] text-text-muted line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-[95%] mt-1.5 sm:mt-2.5 font-medium shrink-0">
+            <p className="text-[12px] sm:text-[13px] text-zinc-400 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-[95%] mt-2 font-normal shrink-0">
               {card.description}
             </p>
           )}
 
-          {/* Sanitized domain tags */}
+          {/* Domain tags */}
           {displayTags.length > 0 && (
-            <div className="flex flex-wrap justify-center items-center gap-[5px] sm:gap-[6px] mt-3 sm:mt-4 max-w-[96%]">
+            <div className="flex flex-wrap justify-center items-center gap-1.5 mt-3 sm:mt-4 max-w-[96%] font-mono text-[11px]">
               {displayTags.map(tag => (
                 <span
                   key={tag}
-                  className="px-2.5 py-[3px] sm:px-3 sm:py-[4px] bg-surface-high/60 rounded-[6px] text-[9.5px] sm:text-[10px] font-semibold tracking-wide text-text-muted border border-surface-highest/60 font-mono"
+                  className="px-2.5 py-[3px] bg-zinc-900 rounded-md text-zinc-300 border border-zinc-800"
                 >
                   {tag}
                 </span>
               ))}
               {remainingCount > 0 && (
-                <span className="px-2 py-[3px] sm:px-2.5 sm:py-[4px] bg-primary/10 text-primary rounded-[6px] text-[9.5px] sm:text-[10px] font-bold border border-primary/20">
+                <span className="px-2 py-[3px] bg-zinc-900 text-zinc-500 rounded-md border border-zinc-800 text-[10px]">
                   +{remainingCount} more
                 </span>
               )}
@@ -232,30 +140,25 @@ export default function OpportunityCard({
         </div>
 
         {/* ── BOTTOM SECTION ── */}
-        <div className="px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3 z-20 shrink-0 bg-gradient-to-t from-surface-low via-surface-low/96 to-transparent">
+        <div className="px-4 pb-4 pt-2 sm:px-6 sm:pb-5 sm:pt-3 z-20 shrink-0 bg-gradient-to-t from-[#121215] via-[#121215]/95 to-transparent">
           {/* Stats row */}
-          <div className="flex justify-between items-center px-1 mb-3">
+          <div className="flex justify-between items-center px-1 mb-3 text-[11px] font-mono">
             <div className="flex flex-col items-start gap-0.5">
-              <span className="text-[8.5px] sm:text-[9px] font-bold tracking-[0.09em] text-text-muted uppercase">Competitiveness</span>
-              <span className="text-[11px] sm:text-[12px] font-bold text-primary capitalize">{card.competitiveness || "High"}</span>
+              <span className="text-zinc-500 uppercase tracking-wider text-[10px]">Stakes</span>
+              <span className="font-semibold text-zinc-200 capitalize">{card.competitiveness || "High"}</span>
             </div>
             <div className="flex flex-col items-end gap-0.5">
-              <span className="text-[8.5px] sm:text-[9px] font-bold tracking-[0.09em] text-text-muted uppercase">Effort Level</span>
-              <span className="text-[11px] sm:text-[12px] font-bold text-text-main capitalize">{card.effort_level || "Medium"}</span>
+              <span className="text-zinc-500 uppercase tracking-wider text-[10px]">Effort</span>
+              <span className="font-semibold text-zinc-200 capitalize">{card.effort_level || "Medium"}</span>
             </div>
           </div>
 
-          {/* Apply Now — with shimmer sweep */}
+          {/* Apply Now button */}
           <a
             href={card.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full block text-center py-[11px] sm:py-[13px] rounded-[12px] sm:rounded-[14px] font-bold text-[13.5px] sm:text-[14px] tracking-wide hover:brightness-105 transition-all active:scale-[0.97] shadow-[0_4px_18px_rgba(34,197,94,0.24)] hover:shadow-[0_8px_28px_rgba(34,197,94,0.36)]"
-            style={{
-              background: "linear-gradient(135deg, #22c55e 0%, #10b981 50%, #22c55e 100%)",
-              backgroundSize: "200% auto",
-              color: "#071a0d",
-            }}
+            className="w-full block text-center py-[11px] sm:py-[12px] rounded-xl font-semibold text-[13.5px] bg-white text-black hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-lg"
           >
             Apply Now →
           </a>
@@ -263,66 +166,60 @@ export default function OpportunityCard({
       </div>
 
       {/* ── FLOATING ACTION PILL ── */}
-      <div className="flex flex-col items-center gap-1 z-30 bg-surface-low border border-surface-high/50 p-1.5 sm:p-2 rounded-[16px] sm:rounded-[18px] shadow-xl shrink-0">
-
+      <div className="flex flex-col items-center gap-1.5 z-30 bg-zinc-900/90 border border-zinc-800 p-1.5 sm:p-2 rounded-2xl shadow-xl shrink-0 backdrop-blur-md absolute right-4 sm:right-6 bottom-24 md:static md:bottom-auto md:right-auto">
         {/* Bookmark */}
         <button
           onClick={() => onBookmark(card.id, status)}
           title={isBookmarked ? "Remove bookmark" : "Bookmark"}
-          className="group/btn w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all ${
+            isBookmarked
+              ? "bg-white text-black"
+              : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+          }`}
         >
-          <Bookmark
-            size={18}
-            strokeWidth={2}
-            className={`transition-colors duration-150 ${
-              isBookmarked ? "text-text-main fill-text-main" : "text-text-muted group-hover/btn:text-text-main"
-            }`}
-          />
+          <Bookmark size={16} className={isBookmarked ? "fill-current" : ""} />
         </button>
 
-        <div className="w-5 h-px bg-surface-high/60" />
+        <div className="w-5 h-px bg-zinc-800" />
 
         {/* Share */}
         <button
           onClick={() => onShare(card.source_url)}
           title="Share"
-          className="group/btn w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all text-zinc-400 hover:text-white hover:bg-zinc-800"
         >
-          <Share2 size={18} strokeWidth={2} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
+          <Share2 size={16} />
         </button>
 
-        <div className="w-5 h-px bg-surface-high/60" />
+        <div className="w-5 h-px bg-zinc-800" />
 
         {/* Star */}
         <button
           onClick={onStar}
           title="Star"
-          className="group/btn w-9 h-9 sm:w-10 sm:h-10 rounded-[10px] flex items-center justify-center cursor-pointer active:scale-90 transition-all hover:bg-surface-high"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center cursor-pointer active:scale-90 transition-all text-zinc-400 hover:text-white hover:bg-zinc-800"
         >
-          <Star size={18} strokeWidth={2} className="text-text-muted group-hover/btn:text-text-main transition-colors duration-150" />
+          <Star size={16} />
         </button>
 
-        {/* Status picker — shown when bookmarked */}
+        {/* Status picker */}
         {isBookmarked && status !== 'archived' && (
           <>
-            <div className="w-5 h-px bg-surface-high/60" />
-            <div className="flex flex-col items-center">
-              <select
-                value={status}
-                onChange={(e) => onStatusChange(card.id, e.target.value)}
-                className="bg-surface-lowest text-text-main text-[9px] border border-surface-high/50 rounded-lg p-1 outline-none w-[48px] sm:w-[52px] text-center appearance-none cursor-pointer focus:border-primary"
-              >
-                <option value="to_apply">Saved</option>
-                <option value="applied">Applied</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-                <option value="archived">Archive</option>
-              </select>
-            </div>
+            <div className="w-5 h-px bg-zinc-800" />
+            <select
+              value={status}
+              onChange={(e) => onStatusChange(card.id, e.target.value)}
+              className="bg-zinc-950 text-zinc-200 text-[10px] font-mono border border-zinc-800 rounded-lg p-1 outline-none w-[52px] text-center cursor-pointer hover:border-zinc-700"
+            >
+              <option value="to_apply">Saved</option>
+              <option value="applied">Applied</option>
+              <option value="accepted">Accepted</option>
+              <option value="rejected">Rejected</option>
+              <option value="archived">Archive</option>
+            </select>
           </>
         )}
       </div>
     </>
   );
 }
-

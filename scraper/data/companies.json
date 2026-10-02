@@ -1,0 +1,625 @@
+[
+  {
+    "name": "Razorpay",
+    "ats": "greenhouse",
+    "token": "razorpaysoftwareprivatelimited",
+    "is_indian_entity": true,
+    "active": true
+  },
+  {
+    "name": "InMobi",
+    "ats": "greenhouse",
+    "token": "inmobi",
+    "is_indian_entity": true,
+    "active": true
+  },
+  {
+    "name": "Thoughtworks",
+    "ats": "greenhouse",
+    "token": "thoughtworks",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Zscaler",
+    "ats": "greenhouse",
+    "token": "zscaler",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Stripe",
+    "ats": "greenhouse",
+    "token": "stripe",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Figma",
+    "ats": "greenhouse",
+    "token": "figma",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Airbnb",
+    "ats": "greenhouse",
+    "token": "airbnb",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Datadog",
+    "ats": "greenhouse",
+    "token": "datadog",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Elastic",
+    "ats": "greenhouse",
+    "token": "elastic",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Cloudflare",
+    "ats": "greenhouse",
+    "token": "cloudflare",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "GitLab",
+    "ats": "greenhouse",
+    "token": "gitlab",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Twilio",
+    "ats": "greenhouse",
+    "token": "twilio",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "MongoDB",
+    "ats": "greenhouse",
+    "token": "mongodb",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Reddit",
+    "ats": "greenhouse",
+    "token": "reddit",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Coinbase",
+    "ats": "greenhouse",
+    "token": "coinbase",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Okta",
+    "ats": "greenhouse",
+    "token": "okta",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Lyft",
+    "ats": "greenhouse",
+    "token": "lyft",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Pinterest",
+    "ats": "greenhouse",
+    "token": "pinterest",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Rubrik",
+    "ats": "greenhouse",
+    "token": "rubrik",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Scale AI",
+    "ats": "greenhouse",
+    "token": "scaleai",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Roblox",
+    "ats": "greenhouse",
+    "token": "roblox",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Discord",
+    "ats": "greenhouse",
+    "token": "discord",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Dropbox",
+    "ats": "greenhouse",
+    "token": "dropbox",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Asana",
+    "ats": "greenhouse",
+    "token": "asana",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Robinhood",
+    "ats": "greenhouse",
+    "token": "robinhood",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Brex",
+    "ats": "greenhouse",
+    "token": "brex",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Affirm",
+    "ats": "greenhouse",
+    "token": "affirm",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Carta",
+    "ats": "greenhouse",
+    "token": "carta",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Chime",
+    "ats": "greenhouse",
+    "token": "chime",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Gusto",
+    "ats": "greenhouse",
+    "token": "gusto",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Instacart",
+    "ats": "greenhouse",
+    "token": "instacart",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "SoFi",
+    "ats": "greenhouse",
+    "token": "sofi",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Pure Storage",
+    "ats": "greenhouse",
+    "token": "purestorage",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Samsara",
+    "ats": "greenhouse",
+    "token": "samsara",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Roku",
+    "ats": "greenhouse",
+    "token": "roku",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Toast",
+    "ats": "greenhouse",
+    "token": "toast",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Workato",
+    "ats": "greenhouse",
+    "token": "workato",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Celonis",
+    "ats": "greenhouse",
+    "token": "celonis",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Tanium",
+    "ats": "greenhouse",
+    "token": "tanium",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Qualtrics",
+    "ats": "greenhouse",
+    "token": "qualtrics",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Staffbase",
+    "ats": "greenhouse",
+    "token": "staffbase",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Typeform",
+    "ats": "greenhouse",
+    "token": "typeform",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "N26",
+    "ats": "greenhouse",
+    "token": "n26",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "FlixBus",
+    "ats": "greenhouse",
+    "token": "flix",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "HelloFresh",
+    "ats": "greenhouse",
+    "token": "hellofresh",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Contentful",
+    "ats": "greenhouse",
+    "token": "contentful",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Monzo",
+    "ats": "greenhouse",
+    "token": "monzo",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "SumUp",
+    "ats": "greenhouse",
+    "token": "sumup",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Bitpanda",
+    "ats": "greenhouse",
+    "token": "bitpanda",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Fireblocks",
+    "ats": "greenhouse",
+    "token": "fireblocks",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Consensys",
+    "ats": "greenhouse",
+    "token": "consensys",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "BitGo",
+    "ats": "greenhouse",
+    "token": "bitgo",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Ripple",
+    "ats": "greenhouse",
+    "token": "ripple",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Spotify",
+    "ats": "lever",
+    "token": "spotify",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "OpenAI",
+    "ats": "ashby",
+    "token": "openai",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Cursor",
+    "ats": "ashby",
+    "token": "cursor",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Perplexity",
+    "ats": "ashby",
+    "token": "perplexity",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Ramp",
+    "ats": "ashby",
+    "token": "ramp",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Linear",
+    "ats": "ashby",
+    "token": "linear",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Replit",
+    "ats": "ashby",
+    "token": "replit",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "ElevenLabs",
+    "ats": "ashby",
+    "token": "elevenlabs",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Supabase",
+    "ats": "ashby",
+    "token": "supabase",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "PostHog",
+    "ats": "ashby",
+    "token": "posthog",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "DeepL",
+    "ats": "ashby",
+    "token": "DeepL",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Temporal",
+    "ats": "ashby",
+    "token": "temporal",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Resend",
+    "ats": "ashby",
+    "token": "resend",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Pinecone",
+    "ats": "ashby",
+    "token": "pinecone",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Modal",
+    "ats": "ashby",
+    "token": "modal",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Cohere",
+    "ats": "ashby",
+    "token": "cohere",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Weaviate",
+    "ats": "ashby",
+    "token": "weaviate",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "LangChain",
+    "ats": "ashby",
+    "token": "langchain",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Hex",
+    "ats": "ashby",
+    "token": "hex",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Synthesia",
+    "ats": "ashby",
+    "token": "synthesia",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Cerebras",
+    "ats": "ashby",
+    "token": "cerebras",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Character AI",
+    "ats": "ashby",
+    "token": "character",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Fireworks",
+    "ats": "ashby",
+    "token": "fireworks",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Braintrust",
+    "ats": "ashby",
+    "token": "braintrust",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Runway",
+    "ats": "ashby",
+    "token": "runway",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Neon",
+    "ats": "ashby",
+    "token": "neon",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Render",
+    "ats": "ashby",
+    "token": "render",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "MotherDuck",
+    "ats": "ashby",
+    "token": "motherduck",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Astronomer",
+    "ats": "ashby",
+    "token": "astronomer",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Railway",
+    "ats": "ashby",
+    "token": "railway",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Prefect",
+    "ats": "ashby",
+    "token": "prefect",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "ClickHouse",
+    "ats": "ashby",
+    "token": "clickhouse",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Warp",
+    "ats": "ashby",
+    "token": "warp",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Bosch",
+    "ats": "smartrecruiters",
+    "token": "BoschGroup",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "Western Digital",
+    "ats": "smartrecruiters",
+    "token": "WesternDigital",
+    "is_indian_entity": false,
+    "active": true
+  },
+  {
+    "name": "SGS",
+    "ats": "smartrecruiters",
+    "token": "SGS",
+    "is_indian_entity": false,
+    "active": true
+  }
+]

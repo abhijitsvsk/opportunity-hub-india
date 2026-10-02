@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { z } from "zod";
 
 const AuthSchema = z.object({
@@ -140,7 +141,7 @@ export async function signIn(formData: FormData) {
   });
 
   if (!parsed.success) {
-    redirect(`/login?error=${encodeURIComponent(parsed.error.issues[0].message)}`);
+    return { error: parsed.error.issues[0].message };
   }
 
   const { email, password } = parsed.data;
@@ -152,7 +153,7 @@ export async function signIn(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message };
   }
 
   revalidatePath("/dashboard");
@@ -166,28 +167,56 @@ export async function signUp(formData: FormData) {
   });
 
   if (!parsed.success) {
-    redirect(`/login?error=${encodeURIComponent(parsed.error.issues[0].message)}`);
+    return { error: parsed.error.issues[0].message };
   }
 
   const { email, password } = parsed.data;
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message };
+  }
+
+  // If email confirmation is required and session is null
+  if (data?.user && !data?.session) {
+    return {
+      success: true,
+      requiresConfirmation: true,
+      message: "Verification email sent! Please check your inbox and click the link to activate your account."
+    };
   }
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  redirect("/onboarding");
 }
 
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/");
+}
+
+export async function signInWithGithub() {
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin");
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'github',
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
 }
 
