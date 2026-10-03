@@ -15,6 +15,8 @@ const { isRelevantForIndianStudent } = require('./utils/geo-filter');
 const { scrapeAtsCompanies } = require('./ats-companies');
 const { scrapeFreehire } = require('./freehire');
 const { scrapeWorkdayCompanies } = require('./workday-companies');
+const { scrapeYcStartups } = require('./yc-startups');
+const { scrapeWellfound } = require('./wellfound');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -546,6 +548,23 @@ async function main() {
     return { scrapedCount: scrapedRecords.length, rawRecords: scrapedRecords };
   }, rateLimiter);
 
+  // WAVE 5: Venture & Tech Startup Hubs (Parallel via Promise.allSettled)
+  console.log(`\n=========================================`);
+  console.log(`--- LAUNCHING WAVE 5: Y COMBINATOR & WELLFOUND STARTUPS (PARALLEL) ---`);
+  console.log(`=========================================`);
+
+  await Promise.allSettled([
+    runPipelineSource('yc-startups', async () => {
+      const structuredRecords = await scrapeYcStartups();
+      return { scrapedCount: structuredRecords.length, structuredRecords };
+    }, rateLimiter),
+
+    runPipelineSource('wellfound-startups', async () => {
+      const structuredRecords = await scrapeWellfound();
+      return { scrapedCount: structuredRecords.length, structuredRecords };
+    }, rateLimiter)
+  ]);
+
   // POST-PIPELINE: Cross-Source Deduplication & Expiry Verification
   await runCrossSourceDeduplication();
   try {
@@ -558,7 +577,7 @@ async function main() {
 
   const totalDuration = ((Date.now() - pipelineStartTime) / 1000).toFixed(1);
   console.log(`\n=========================================`);
-  console.log(`=== PIPELINE COMPLETE (ALL 4 WAVES) IN ${totalDuration}s ===`);
+  console.log(`=== PIPELINE COMPLETE (ALL 5 WAVES) IN ${totalDuration}s ===`);
   console.log(`=========================================`);
 }
 

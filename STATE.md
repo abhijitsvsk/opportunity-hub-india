@@ -31,8 +31,11 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **Decoupled Business Logic**: `src/lib/opportunities.ts` houses `computeMatchScore` and `cleanDomainTags` independently from UI components.
 - **Application Tracking**: React 19 optimistic updates for stages (`to_apply`, `applied`, `accepted`, `rejected`, `archived`).
 - **Admin Portal**: Server-gated (`ADMIN_EMAIL`) manual opportunity manager and GitHub Actions scraper trigger.
-- **Scraper Pipeline (13 sources)**:
-  - 4-wave parallel/sequential execution (`pipeline.js`)
+- **Scraper Pipeline (15 sources across 5 waves)**:
+  - 5-wave parallel/sequential execution (`pipeline.js`)
+  - **Wave 5: Venture & Tech Startup Hubs (`yc-startups.js` & `wellfound.js`)**:
+    - **Y Combinator Startup Jobs (`yc-startups.js`)**: Direct ingestion of high-signal YC startup roles (India locations, Global Remote, and Software Engineering internships) directly from Y Combinator's official jobs platform (`ycombinator.com/jobs` and `workatastartup.com`).
+    - **Wellfound (AngelList) India Tech Roles (`wellfound.js`)**: Deep server-side Apollo data extraction across India startup hubs (Mumbai, Hyderabad, Pune, Delhi/Noida, India-wide), adding over 200+ high-paying tech startup engineering listings.
   - **FreeHire Live API Ingestor** (`freehire.js`): Deep 32-page high-throughput query engine querying FreeHire's open REST API across 92 ATS platforms, expanding active opportunities to 1,545+ with direct company career links.
   - **Workday Enterprise Adapter** (`workday-companies.js`): Direct CXS JSON API client pulling student and early-career tech listings for Fortune 500 MNCs (Nvidia, Adobe, Salesforce, Target) without headless browser overhead.
   - **Direct ATS Company Career Scraper** (`ats-companies.js` + `companies.json`): Scaled company registry with verified active endpoints across Greenhouse, Lever, Ashby, and SmartRecruiters (including Paytm, Meesho, CRED, InMobi, Sarvam AI, Mindtickle, Rubrik, Thoughtworks, Stripe) with stale job reconciliation.
