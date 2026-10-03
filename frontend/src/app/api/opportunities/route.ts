@@ -76,6 +76,22 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const companyParam = searchParams.get("company");
+  if (companyParam && companyParam !== "All") {
+    const { data: compData, error: compErr } = await supabase
+      .from('opportunities')
+      .select('*')
+      .eq('is_active', true)
+      .or(`normalized_company.ilike.%${companyParam}%,title.ilike.%${companyParam}%`)
+      .order('deadline', { ascending: true, nullsFirst: false })
+      .range(start, end);
+
+    if (compErr) {
+      return NextResponse.json({ error: compErr.message }, { status: 500 });
+    }
+    return NextResponse.json({ opportunities: compData || [] });
+  }
+
   // Finally, apply the pagination limit/offset via .range()
   const { data, error } = await query.range(start, end);
 
@@ -84,5 +100,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ opportunities: data || [] });
+  let opportunities = data || [];
+  if (opportunities.length > 0) {
+    const oppIds = opportunities.map((o: any) => o.id);
+    const { data: extras } = await supabase
+      .from('opportunities')
+      .select('id, normalized_company, location')
+      .in('id', oppIds);
+
+    if (extras && extras.length > 0) {
+      const extrasMap = new Map(extras.map((e: any) => [e.id, e]));
+      opportunities = opportunities.map((o: any) => {
+        const extra = extrasMap.get(o.id);
+        return {
+          ...o,
+          normalized_company: extra?.normalized_company || o.normalized_company,
+          location: extra?.location || o.location,
+        };
+      });
+    }
+  }
+
+  return NextResponse.json({ opportunities });
 }

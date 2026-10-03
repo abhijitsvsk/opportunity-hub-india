@@ -50,6 +50,7 @@ export default function Feed({
   const [sortBy, setSortBy] = useState<'match' | 'deadline' | 'newest'>('match');
   const [selectedBatch, setSelectedBatch] = useState<BatchFilterKey>('all');
   const [selectedCompany, setSelectedCompany] = useState<string>("All");
+  const [globalCompanyList, setGlobalCompanyList] = useState<[string, number][]>([]);
   const [isCompanyFilterOpen, setIsCompanyFilterOpen] = useState(false);
   const [companySearchQuery, setCompanySearchQuery] = useState("");
   const [drawerCard, setDrawerCard] = useState<Opportunity | null>(null);
@@ -186,23 +187,72 @@ export default function Feed({
       })()
     : activeOpps;
 
+  // Fetch global company directory across all 1,400+ opportunities
+  useEffect(() => {
+    fetch('/api/companies')
+      .then(res => res.json())
+      .then(data => {
+        if (data?.companies && Array.isArray(data.companies)) {
+          setGlobalCompanyList(data.companies);
+        }
+      })
+      .catch(err => console.error("Failed to load company directory:", err));
+  }, []);
+
   // Dynamically compute company list with opportunity counts
   const companyCounts = useMemo(() => {
+    if (globalCompanyList.length > 0) return globalCompanyList;
     const counts = new Map<string, number>();
     for (const op of allOpps) {
       const comp = extractCompanyName(op);
-      if (comp && comp !== 'Other') {
+      if (comp && comp !== 'Other' && comp !== 'Opportunity') {
         counts.set(comp, (counts.get(comp) || 0) + 1);
       }
     }
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
-  }, [allOpps]);
+  }, [allOpps, globalCompanyList]);
 
   const filteredCompanyList = useMemo(() => {
     if (!companySearchQuery.trim()) return companyCounts;
     const q = companySearchQuery.toLowerCase();
     return companyCounts.filter(([comp]) => comp.toLowerCase().includes(q));
   }, [companyCounts, companySearchQuery]);
+
+  // Handle selecting a company — fetches directly if not yet in client memory
+  const handleSelectCompany = useCallback(async (company: string) => {
+    setSelectedCompany(company);
+    setIsCompanyFilterOpen(false);
+
+    if (company !== "All") {
+      const hasLoadedMatches = allOpps.some(op => {
+        const opComp = extractCompanyName(op).toLowerCase();
+        const rawComp = (op.normalized_company || '').toLowerCase();
+        const target = company.toLowerCase();
+        return opComp === target || rawComp.includes(target);
+      });
+
+      if (!hasLoadedMatches) {
+        setIsFetching(true);
+        try {
+          const res = await fetch(`/api/opportunities?company=${encodeURIComponent(company)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.opportunities && data.opportunities.length > 0) {
+              setAllOpps(prev => {
+                const existingIds = new Set(prev.map(p => p.id));
+                const newItems = data.opportunities.filter((o: Opportunity) => !existingIds.has(o.id));
+                return [...newItems, ...prev];
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch opportunities for company:", err);
+        } finally {
+          setIsFetching(false);
+        }
+      }
+    }
+  }, [allOpps]);
 
   // Instant text search filter, company filter & batch filter
   const displayedOpps = fullyFilteredOpps.filter(op => {
@@ -546,13 +596,15 @@ export default function Feed({
                       {/* Company listing */}
                       <div className="max-h-[50vh] overflow-y-auto space-y-0.5 no-scrollbar">
                         <button
-                          onClick={() => { setSelectedCompany("All"); setIsCompanyFilterOpen(false); }}
+                          onClick={() => handleSelectCompany("All")}
                           className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
                             selectedCompany === "All" ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
                           }`}
                         >
                           <span>All Companies</span>
-                          <span className="text-[10px] font-mono text-zinc-500">{allOpps.length}</span>
+                          <span className="text-[10px] font-mono text-zinc-500">
+                            {globalCompanyList.reduce((acc, c) => acc + c[1], 0) || allOpps.length}
+                          </span>
                         </button>
 
                         {filteredCompanyList.map(([company, count]) => {
@@ -560,7 +612,7 @@ export default function Feed({
                           return (
                             <button
                               key={company}
-                              onClick={() => { setSelectedCompany(company); setIsCompanyFilterOpen(false); }}
+                              onClick={() => handleSelectCompany(company)}
                               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
                                 isSelected ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
                               }`}

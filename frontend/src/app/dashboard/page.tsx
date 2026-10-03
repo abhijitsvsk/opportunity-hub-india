@@ -49,6 +49,27 @@ export default async function DashboardPage() {
   } else {
     pagedOpportunities = data || [];
     totalPages = count ? Math.ceil(count / pageSize) : 1;
+
+    // Hydrate normalized_company and location which are omitted by the RPC function
+    if (pagedOpportunities.length > 0) {
+      const oppIds = pagedOpportunities.map((o: any) => o.id);
+      const { data: extras } = await supabase
+        .from('opportunities')
+        .select('id, normalized_company, location')
+        .in('id', oppIds);
+
+      if (extras && extras.length > 0) {
+        const extrasMap = new Map(extras.map((e: any) => [e.id, e]));
+        pagedOpportunities = pagedOpportunities.map((o: any) => {
+          const extra = extrasMap.get(o.id);
+          return {
+            ...o,
+            normalized_company: extra?.normalized_company || o.normalized_company,
+            location: extra?.location || o.location,
+          };
+        });
+      }
+    }
   }
 
   let savedStatuses: any[] = [];
