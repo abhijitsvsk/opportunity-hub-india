@@ -76,6 +76,23 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const searchParam = searchParams.get("search");
+  if (searchParam && searchParam.trim()) {
+    const q = searchParam.trim();
+    const { data: searchData, error: searchErr } = await supabase
+      .from('opportunities')
+      .select('*')
+      .eq('is_active', true)
+      .or(`title.ilike.%${q}%,description.ilike.%${q}%,normalized_company.ilike.%${q}%,location.ilike.%${q}%`)
+      .order('created_at', { ascending: false })
+      .range(start, end);
+
+    if (searchErr) {
+      return NextResponse.json({ error: searchErr.message }, { status: 500 });
+    }
+    return NextResponse.json({ opportunities: searchData || [] });
+  }
+
   const companyParam = searchParams.get("company");
   if (companyParam && companyParam !== "All") {
     const { data: compData, error: compErr } = await supabase

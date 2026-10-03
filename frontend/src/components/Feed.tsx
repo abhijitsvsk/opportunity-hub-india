@@ -254,6 +254,35 @@ export default function Feed({
     }
   }, [allOpps]);
 
+  // Server-side search hook: fetch matching records across all 1,600+ opportunities
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        setIsFetching(true);
+        const res = await fetch(`/api/opportunities?search=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.opportunities && data.opportunities.length > 0) {
+            setAllOpps(prev => {
+              const existingIds = new Set(prev.map(p => p.id));
+              const newItems = data.opportunities.filter((o: Opportunity) => !existingIds.has(o.id));
+              return [...newItems, ...prev];
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Search query failed:", err);
+      } finally {
+        setIsFetching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Instant text search filter, company filter & batch filter
   const displayedOpps = fullyFilteredOpps.filter(op => {
     // 1. Graduation batch filter

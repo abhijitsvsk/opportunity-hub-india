@@ -72,6 +72,20 @@ export default async function DashboardPage() {
     }
   }
 
+  // Fetch freshest opportunities (including newly added YC & Wellfound tech startup roles)
+  const { data: newestData } = await supabase
+    .from('opportunities')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  if (newestData && newestData.length > 0) {
+    const existingIds = new Set(newestData.map((n: any) => n.id));
+    const remainingRanked = pagedOpportunities.filter((o: any) => !existingIds.has(o.id));
+    pagedOpportunities = [...newestData, ...remainingRanked];
+  }
+
   let savedStatuses: any[] = [];
 
   const { data: dbSavedStatuses, error: savedError } = await supabase
