@@ -4,9 +4,9 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: '/',
-      disallow: ['/dashboard/', '/login/', '/api/'],
+      allow: ['/', '/api/og'],
+      disallow: ['/admin', '/api/'],
     },
-    sitemap: 'https://opportunityhub.com/sitemap.xml',
+    sitemap: 'https://opportunity-hub-india.vercel.app/sitemap.xml',
   };
 }
