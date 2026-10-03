@@ -12,6 +12,7 @@ export type Opportunity = {
   competitiveness: string;
   eligibility?: any;
   created_at?: string;
+  normalized_company?: string;
 };
 
 export type UserSavedStatus = {

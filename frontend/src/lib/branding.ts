@@ -157,3 +157,42 @@ export function getBrandInfo(title: string, sourceUrl?: string, type?: string): 
     logoUrl
   };
 }
+
+export function extractCompanyName(op: { title?: string; source_url?: string; normalized_company?: string; type?: string }): string {
+  if (op.normalized_company && op.normalized_company !== '__no_company_fallback__') {
+    return op.normalized_company
+      .split(/\s+/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  const brand = getBrandInfo(op.title || '', op.source_url, op.type);
+  if (brand.label && brand.label !== (op.type || '').toUpperCase() && brand.label !== 'OPPORTUNITY') {
+    return brand.label;
+  }
+
+  // Fallback: check if title has "Company - Job" pattern
+  if (op.title) {
+    const match = op.title.match(/^([a-zA-Z0-9\s&.]+)\s*[-:|–—]\s*(.+)$/);
+    if (match && match[1].length >= 2 && match[1].length <= 25) {
+      return match[1].trim();
+    }
+  }
+
+  // Fallback: hostname
+  if (op.source_url) {
+    try {
+      const host = new URL(op.source_url).hostname.replace(/^www\./, '');
+      const parts = host.split('.');
+      if (parts[0] && !['jobs', 'careers', 'boards', 'apply', 'discord', 't'].includes(parts[0])) {
+        return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+      }
+      if (parts.length >= 2 && parts[1]) {
+        return parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+      }
+    } catch {}
+  }
+
+  return 'Other';
+}
+

@@ -3,9 +3,9 @@
 import {
   Compass, Flame, User, Star, Layers, LogOut,
   ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Rocket, Filter, CheckCircle2, Bookmark,
-  Code2, Briefcase, LayoutGrid, Rows3, Search, X
+  Code2, Briefcase, LayoutGrid, Rows3, Search, X, Building2
 } from "lucide-react";
-import { useState, useRef, useTransition, useOptimistic, useCallback, useEffect, startTransition as reactStartTransition } from "react";
+import { useState, useRef, useTransition, useOptimistic, useCallback, useEffect, useMemo, startTransition as reactStartTransition } from "react";
 import { toggleBookmark, updateApplicationStatus, signOut } from "@/app/actions";
 import Link from "next/link";
 import { Opportunity, UserSavedStatus } from "@/types";
@@ -17,6 +17,7 @@ import { Dock } from "./ui/dock-two";
 import { MeshGradientSVG } from "./ui/shader-svg";
 import { computeMatchScore } from "@/lib/opportunities";
 import { matchesBatchFilter, BATCH_DEFINITIONS, BatchFilterKey } from "@/lib/eligibility";
+import { extractCompanyName } from "@/lib/branding";
 
 export default function Feed({
   initialOpportunities,
@@ -48,6 +49,9 @@ export default function Feed({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<'match' | 'deadline' | 'newest'>('match');
   const [selectedBatch, setSelectedBatch] = useState<BatchFilterKey>('all');
+  const [selectedCompany, setSelectedCompany] = useState<string>("All");
+  const [isCompanyFilterOpen, setIsCompanyFilterOpen] = useState(false);
+  const [companySearchQuery, setCompanySearchQuery] = useState("");
   const [drawerCard, setDrawerCard] = useState<Opportunity | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [, startTransition] = useTransition();
@@ -182,21 +186,50 @@ export default function Feed({
       })()
     : activeOpps;
 
-  // Instant text search filter & batch filter
+  // Dynamically compute company list with opportunity counts
+  const companyCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const op of allOpps) {
+      const comp = extractCompanyName(op);
+      if (comp && comp !== 'Other') {
+        counts.set(comp, (counts.get(comp) || 0) + 1);
+      }
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [allOpps]);
+
+  const filteredCompanyList = useMemo(() => {
+    if (!companySearchQuery.trim()) return companyCounts;
+    const q = companySearchQuery.toLowerCase();
+    return companyCounts.filter(([comp]) => comp.toLowerCase().includes(q));
+  }, [companyCounts, companySearchQuery]);
+
+  // Instant text search filter, company filter & batch filter
   const displayedOpps = fullyFilteredOpps.filter(op => {
     // 1. Graduation batch filter
     if (selectedBatch !== 'all' && !matchesBatchFilter(op.eligibility, op.type, op.title, selectedBatch)) {
       return false;
     }
 
-    // 2. Search query filter
+    // 2. Dedicated company filter
+    if (selectedCompany !== "All") {
+      const opComp = extractCompanyName(op);
+      if (opComp.toLowerCase() !== selectedCompany.toLowerCase()) {
+        return false;
+      }
+    }
+
+    // 3. Search query filter (matches title, description, tags, type, company, source url)
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     const title = (op.title || '').toLowerCase();
     const desc = (op.description || '').toLowerCase();
     const tags = (op.domain_tags || []).join(' ').toLowerCase();
     const type = (op.type || '').toLowerCase();
-    return title.includes(q) || desc.includes(q) || tags.includes(q) || type.includes(q);
+    const comp = extractCompanyName(op).toLowerCase();
+    const rawComp = (op.normalized_company || '').toLowerCase();
+    const url = (op.source_url || '').toLowerCase();
+    return title.includes(q) || desc.includes(q) || tags.includes(q) || type.includes(q) || comp.includes(q) || rawComp.includes(q) || url.includes(q);
   });
 
   // Sort displayed opportunities
@@ -465,12 +498,99 @@ export default function Feed({
               </div>
             )}
 
+            {/* Dedicated Company Filter */}
+            {activeTab === 'discover' && (
+              <div className="relative shrink-0">
+                <button
+                  onClick={() => setIsCompanyFilterOpen(!isCompanyFilterOpen)}
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg border text-[12px] font-medium transition-all cursor-pointer active:scale-95 ${
+                    selectedCompany !== "All"
+                      ? "bg-white text-black border-white font-semibold shadow-sm"
+                      : "bg-zinc-900 border-zinc-800 text-zinc-200 hover:text-white hover:border-zinc-700"
+                  }`}
+                >
+                  <Building2 size={13} className={selectedCompany !== "All" ? "text-black" : "text-zinc-400"} />
+                  <span className="max-w-[75px] sm:max-w-[120px] truncate">
+                    {selectedCompany === "All" ? "Company" : selectedCompany}
+                  </span>
+                  {selectedCompany !== "All" ? (
+                    <span 
+                      onClick={(e) => { e.stopPropagation(); setSelectedCompany("All"); }}
+                      className="hover:bg-black/20 rounded-full px-1 text-[10px]"
+                      title="Clear company filter"
+                    >
+                      ✕
+                    </span>
+                  ) : (
+                    <ChevronDown size={12} className={`transition-transform text-zinc-400 hidden sm:inline ${isCompanyFilterOpen ? "rotate-180" : ""}`} />
+                  )}
+                </button>
+
+                {isCompanyFilterOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsCompanyFilterOpen(false)} />
+                    <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-zinc-950 border border-zinc-800 rounded-xl p-2 shadow-2xl flex flex-col gap-1.5 z-50 animate-fadeIn">
+                      {/* Search box inside company popover */}
+                      <div className="relative flex items-center">
+                        <Search size={12} className="absolute left-2.5 text-zinc-500 pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder="Search 100+ companies..."
+                          value={companySearchQuery}
+                          onChange={(e) => setCompanySearchQuery(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-7 pr-3 py-1 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+                          autoFocus
+                        />
+                      </div>
+
+                      {/* Company listing */}
+                      <div className="max-h-[50vh] overflow-y-auto space-y-0.5 no-scrollbar">
+                        <button
+                          onClick={() => { setSelectedCompany("All"); setIsCompanyFilterOpen(false); }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
+                            selectedCompany === "All" ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                          }`}
+                        >
+                          <span>All Companies</span>
+                          <span className="text-[10px] font-mono text-zinc-500">{allOpps.length}</span>
+                        </button>
+
+                        {filteredCompanyList.map(([company, count]) => {
+                          const isSelected = selectedCompany === company;
+                          return (
+                            <button
+                              key={company}
+                              onClick={() => { setSelectedCompany(company); setIsCompanyFilterOpen(false); }}
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
+                                isSelected ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                              }`}
+                            >
+                              <span className="truncate">{company}</span>
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 ml-2 shrink-0">
+                                {count}
+                              </span>
+                            </button>
+                          );
+                        })}
+
+                        {filteredCompanyList.length === 0 && (
+                          <div className="py-4 text-center text-xs text-zinc-500">
+                            No companies matching &quot;{companySearchQuery}&quot;
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Instant Search Bar (Unified single bar for mobile & desktop) */}
             <div className="relative flex-1 max-w-sm flex items-center">
               <Search size={13} className="absolute left-2.5 sm:left-3 text-zinc-500 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search roles, tech..."
+                placeholder="Search roles, companies, tech..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-zinc-900/80 border border-zinc-800 rounded-lg pl-7 sm:pl-8 pr-6 sm:pr-7 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
@@ -548,12 +668,12 @@ export default function Feed({
                 ? `No results for "${searchQuery}". Try a different keyword!`
                 : "No listings match your current filters. Try expanding your search!"}
             </p>
-            {(!activeFilters.has("All") || searchQuery) && (
+            {(!activeFilters.has("All") || searchQuery || selectedCompany !== "All" || selectedBatch !== "all") && (
               <button
-                onClick={() => { handleFilterChange("All"); setSearchQuery(""); }}
+                onClick={() => { handleFilterChange("All"); setSearchQuery(""); setSelectedCompany("All"); setSelectedBatch("all"); }}
                 className="px-4 py-2 rounded-lg bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition-all cursor-pointer"
               >
-                Reset Filters
+                Reset All Filters
               </button>
             )}
           </div>
