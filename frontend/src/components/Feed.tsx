@@ -2,7 +2,7 @@
 
 import {
   Compass, Flame, User, Star, Layers, LogOut,
-  ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Trophy, Rocket, Filter, CheckCircle2, Bookmark,
+  ChevronUp, ChevronDown, Zap, Brain, Shield, Palette, Globe, Rocket, Filter, CheckCircle2, Bookmark,
   Code2, Briefcase, LayoutGrid, Rows3, Search, X
 } from "lucide-react";
 import { useState, useRef, useTransition, useOptimistic, useCallback, useEffect, startTransition as reactStartTransition } from "react";
@@ -391,8 +391,10 @@ export default function Feed({
       <main className="flex-1 flex flex-col relative overflow-hidden">
 
         {/* ── Header ── */}
-        <header className="h-14 shrink-0 flex items-center justify-between px-3 sm:px-5 relative z-50 border-b border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-md gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+        <header className="shrink-0 flex flex-col relative z-50 border-b border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-md">
+          {/* Row 1: Primary Controls */}
+          <div className="h-14 flex items-center justify-between px-3 sm:px-5 gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             {/* Logo */}
             <div className="flex items-center gap-2 shrink-0">
               <div className="w-[28px] h-[28px] rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs shadow-sm">
@@ -504,10 +506,11 @@ export default function Feed({
               <button onClick={() => setActionError(null)} className="bg-black/20 px-1.5 py-0.5 rounded-full hover:bg-black/40 text-[10px]">✕</button>
             </div>
           )}
+          </div>
 
-          {/* Graduation Batch Quick Filter Strip */}
+          {/* Row 2: Graduation Batch Quick Filter Strip */}
           {activeTab === "discover" && (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 pb-0.5 border-t border-zinc-800/50 text-[11px] font-mono">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-3 sm:px-5 py-2 border-t border-zinc-800/40 text-[11px] font-mono bg-[#0c0c0f]/50">
               <span className="text-zinc-500 text-[10px] uppercase font-semibold shrink-0 mr-1 hidden sm:inline">
                 Cohort:
               </span>

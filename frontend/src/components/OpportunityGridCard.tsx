@@ -50,16 +50,15 @@ export default function OpportunityGridCard({
               className={`w-8 h-8 rounded-lg border flex items-center justify-center font-mono font-bold text-[11px] shrink-0 overflow-hidden relative ${brand.badgeBg} ${brand.badgeText} ${brand.badgeBorder}`}
               title={brand.label}
             >
-              {brand.logoUrl ? (
+              <span>{brand.monogram}</span>
+              {brand.logoUrl && (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img 
                   src={brand.logoUrl} 
                   alt={brand.label} 
-                  className="w-5 h-5 object-contain rounded"
+                  className="absolute inset-0 w-full h-full object-contain p-1.5 rounded-lg bg-[#121215]"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
-              ) : (
-                brand.monogram
               )}
             </div>
             <span className="text-[10.5px] font-mono uppercase px-2 py-0.5 rounded-md bg-zinc-900 text-zinc-300 border border-zinc-800">

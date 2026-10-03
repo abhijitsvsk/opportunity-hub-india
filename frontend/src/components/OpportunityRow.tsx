@@ -46,19 +46,18 @@ export default function OpportunityRow({
       <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
         {/* Monogram Badge / Logo */}
         <div
-          className={`w-11 h-11 rounded-xl border flex items-center justify-center font-mono font-bold text-xs tracking-wider shrink-0 transition-transform group-hover:scale-105 overflow-hidden ${brand.badgeBg} ${brand.badgeText} ${brand.badgeBorder}`}
+          className={`w-11 h-11 rounded-xl border flex items-center justify-center font-mono font-bold text-xs tracking-wider shrink-0 transition-transform group-hover:scale-105 overflow-hidden relative ${brand.badgeBg} ${brand.badgeText} ${brand.badgeBorder}`}
           title={brand.label}
         >
-          {brand.logoUrl ? (
+          <span>{brand.monogram}</span>
+          {brand.logoUrl && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img 
               src={brand.logoUrl} 
               alt={brand.label} 
-              className="w-6 h-6 object-contain rounded"
+              className="absolute inset-0 w-full h-full object-contain p-2 rounded-xl bg-[#121215]"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
-          ) : (
-            brand.monogram
           )}
         </div>
 

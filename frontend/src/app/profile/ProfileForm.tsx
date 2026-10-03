@@ -68,9 +68,13 @@ export default function ProfileForm({ initialProfile, userEmail }: ProfileFormPr
   const handleAddCustomTag = (e: React.KeyboardEvent | React.MouseEvent) => {
     if ('key' in e && e.key !== 'Enter') return;
     e.preventDefault();
-    const trimmed = customTagInput.trim();
-    if (trimmed && !selectedTags.includes(trimmed)) {
-      setSelectedTags(prev => [...prev, trimmed]);
+    const cleanTag = customTagInput.replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+    if (cleanTag && cleanTag.length >= 2 && cleanTag.length <= 24 && !selectedTags.includes(cleanTag)) {
+      if (selectedTags.length >= 25) {
+        setErrorMsg("Maximum of 25 tech stack skills reached.");
+        return;
+      }
+      setSelectedTags(prev => [...prev, cleanTag]);
       setCustomTagInput("");
     }
   };
@@ -88,6 +92,14 @@ export default function ProfileForm({ initialProfile, userEmail }: ProfileFormPr
     setSuccessMsg(null);
 
     const formData = new FormData(e.currentTarget);
+    const rawFullName = formData.get("full_name") as string;
+    const cleanName = (rawFullName || "").trim();
+    if (cleanName.length < 2) {
+      setErrorMsg("Please enter a valid full name (at least 2 characters).");
+      setSaving(false);
+      return;
+    }
+    formData.set("full_name", cleanName);
     formData.set("tech_stack", selectedTags.join(","));
     formData.set("focus_area", selectedFocusAreas.join(","));
 

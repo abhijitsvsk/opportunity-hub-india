@@ -66,14 +66,34 @@ export default function QuickViewDrawer({
       const deadlineDate = new Date(card.deadline);
       if (isNaN(deadlineDate.getTime())) return null;
 
-      // Start date: 1 day before deadline or on deadline date
-      const startTime = deadlineDate.toISOString().replace(/-|:|\.\d\d\d/g, "");
-      const endTime = new Date(deadlineDate.getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+      // Do not generate calendar link for past/expired events
+      if (deadlineDate.getTime() < Date.now() - 24 * 60 * 60 * 1000) return null;
+
+      // Check if date-only format (e.g. YYYY-MM-DD)
+      const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(card.deadline.trim());
+      let datesParam = '';
+      if (isDateOnly) {
+        // All-day event: YYYYMMDD/YYYYMMDD (next day)
+        const y = deadlineDate.getUTCFullYear();
+        const m = String(deadlineDate.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(deadlineDate.getUTCDate()).padStart(2, '0');
+        const nextDay = new Date(deadlineDate);
+        nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+        const ny = nextDay.getUTCFullYear();
+        const nm = String(nextDay.getUTCMonth() + 1).padStart(2, '0');
+        const nd = String(nextDay.getUTCDate()).padStart(2, '0');
+        datesParam = `${y}${m}${d}/${ny}${nm}${nd}`;
+      } else {
+        const startTime = deadlineDate.toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const endTime = new Date(deadlineDate.getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        datesParam = `${startTime}/${endTime}`;
+      }
 
       const title = `Deadline: ${card.title}`;
-      const details = `Application Deadline for ${card.title}.\n\nApply here: ${card.source_url}\n\nTracked via Opportunity Hub India.`;
+      const details = `Application Deadline for ${card.title}.\n\nApply here: ${card.source_url || ''}\n\nTracked via Opportunity Hub India.`;
+      const location = card.location || 'Online / Remote';
 
-      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startTime}/${endTime}&details=${encodeURIComponent(details)}`;
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${datesParam}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
     } catch {
       return null;
     }
@@ -86,12 +106,19 @@ export default function QuickViewDrawer({
       {/* Dark backdrop overlay */}
       <div 
         onClick={onClose}
-        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+        role="button"
+        tabIndex={0}
+        aria-label="Close preview"
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClose(); }}
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity animate-in fade-in duration-200 cursor-pointer"
       />
 
       {/* Slide-over panel (right on desktop, bottom sheet on mobile) */}
       <div 
         ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="drawer-title"
         className="relative w-full max-w-xl h-full bg-[#121215] border-l border-zinc-800/90 shadow-2xl flex flex-col z-10 transition-transform duration-300 animate-in slide-in-from-right"
       >
         {/* Top Header Bar */}
@@ -105,6 +132,7 @@ export default function QuickViewDrawer({
 
           <button
             onClick={onClose}
+            aria-label="Close preview"
             className="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
           >
             <X size={16} />
@@ -120,16 +148,15 @@ export default function QuickViewDrawer({
               <div
                 className={`w-12 h-12 rounded-xl border flex items-center justify-center font-mono font-bold text-sm tracking-wider shrink-0 overflow-hidden relative ${brand.badgeBg} ${brand.badgeText} ${brand.badgeBorder}`}
               >
-                {brand.logoUrl ? (
+                <span>{brand.monogram}</span>
+                {brand.logoUrl && (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img 
                     src={brand.logoUrl} 
                     alt={brand.label} 
-                    className="w-7 h-7 object-contain rounded"
+                    className="absolute inset-0 w-full h-full object-contain p-2 rounded-xl bg-[#121215]"
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
-                ) : (
-                  brand.monogram
                 )}
               </div>
               <div>
@@ -151,7 +178,7 @@ export default function QuickViewDrawer({
               </div>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">
+            <h2 id="drawer-title" className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">
               {card.title}
             </h2>
           </div>
@@ -226,6 +253,8 @@ export default function QuickViewDrawer({
                   : "bg-zinc-900 text-zinc-400 hover:text-white border-zinc-800 hover:bg-zinc-800"
               }`}
               title={isBookmarked ? "Remove from Saved" : "Save Opportunity"}
+              aria-label={isBookmarked ? "Remove from Saved" : "Save Opportunity"}
+              aria-pressed={isBookmarked}
             >
               <Bookmark size={16} className={isBookmarked ? "fill-current" : ""} />
             </button>
@@ -235,6 +264,7 @@ export default function QuickViewDrawer({
               onClick={() => onShare(card.source_url)}
               className="p-3 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 hover:bg-zinc-800 transition-colors cursor-pointer"
               title="Share Link"
+              aria-label="Share opportunity"
             >
               <Share2 size={16} />
             </button>
@@ -247,6 +277,7 @@ export default function QuickViewDrawer({
                 rel="noopener noreferrer"
                 className="p-3 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 hover:bg-zinc-800 transition-colors cursor-pointer flex items-center"
                 title="Add Deadline to Google Calendar"
+                aria-label="Add deadline to Google Calendar"
               >
                 <Calendar size={16} />
               </a>
