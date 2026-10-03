@@ -1,6 +1,6 @@
 # Project State
 
-**Last Updated**: 2026-10-02
+**Last Updated**: 2026-10-03
 
 ## Development Phase
 
@@ -55,6 +55,10 @@ Active development — Core platform is built, deployed, and operational. Focus 
   - Supabase 4-day keepalive workflow (`keepalive-supabase.yml`)
   - GitHub Actions bi-monthly activity keepalive (`keepalive-workflow.yml`)
   - Vercel production deployment
+- **Progressive Web App (PWA)**: `manifest.json`, service worker (`sw.js`) with network-first API / cache-first static strategy, SVG compass icon, iOS safe-area viewport, `ServiceWorkerRegistrar` component for "Add to Home Screen" installability.
+- **Dynamic OG Images**: `@vercel/og` powered Open Graph image generation for home, dashboard, and individual opportunity pages. Dynamic `/api/og` route accepting title/company/deadline/type params for rich WhatsApp/Telegram link previews.
+- **SEO Opportunity Detail Pages (`/opportunity/[id]`)**: Server-rendered detail pages with Supabase fetch, JSON-LD structured data (JobPosting schema), dynamic metadata, per-opportunity OG images, company logos, deadline badges, domain tag pills, and "Apply" CTA. Includes `sitemap.ts` (all active opportunities) and `robots.ts`.
+- **PostHog Analytics**: Free-tier pageview tracking with `PostHogProvider` (Suspense-wrapped), graceful skip when `NEXT_PUBLIC_POSTHOG_KEY` not configured, route-change capture via `usePathname`/`useSearchParams`.
 
 ## What Is Partially Working / Needs Attention
 
