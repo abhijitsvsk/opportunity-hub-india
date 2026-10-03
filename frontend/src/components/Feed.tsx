@@ -228,7 +228,7 @@ export default function Feed({
     });
   }, [companyCounts, companySearchQuery]);
 
-  // Handle selecting a company — fetches directly if not yet in client memory
+  // Handle selecting a company â€” fetches directly if not yet in client memory
   const handleSelectCompany = useCallback(async (company: string) => {
     setSelectedCompany(company);
     setIsCompanyFilterOpen(false);
@@ -344,7 +344,7 @@ export default function Feed({
       const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
       return bDate - aDate; // Newest first
     }
-    // 'match' — sort by match score descending (requires profile)
+    // 'match' â€” sort by match score descending (requires profile)
     const aScore = computeMatchScore(a, profile).score;
     const bScore = computeMatchScore(b, profile).score;
     return bScore - aScore;
@@ -466,7 +466,7 @@ export default function Feed({
 
   const activeFilterCount = activeFilters.has("All") ? 0 : activeFilters.size;
 
-  // Dock items — Navigation section + View mode section
+  // Dock items â€” Navigation section + View mode section
   const dockItems = [
     {
       icon: Compass,
@@ -511,7 +511,7 @@ export default function Feed({
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <main className="flex-1 flex flex-col relative overflow-hidden">
 
-        {/* ── Header ── */}
+        {/* â”€â”€ Header â”€â”€ */}
         <header className="shrink-0 flex flex-col relative z-50 border-b border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-md">
           {/* Row 1: Primary Controls */}
           <div className="h-14 flex items-center justify-between px-3 sm:px-5 gap-2">
@@ -524,7 +524,7 @@ export default function Feed({
               <span className="font-bold text-[15px] tracking-tight text-white hidden xs:inline sm:inline">Opp<span className="text-zinc-400">Hub</span></span>
             </div>
 
-            {/* Filter button — discover tab */}
+            {/* Filter button â€” discover tab */}
             {activeTab === 'discover' && (
               <div className="relative shrink-0">
                 <button
@@ -554,7 +554,7 @@ export default function Feed({
                           className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all text-left mb-1"
                         >
                           Clear All Filters
-                          <span>✕</span>
+                          <span>âœ•</span>
                         </button>
                       )}
                       {FILTER_DEFS.map(filter => {
@@ -607,7 +607,7 @@ export default function Feed({
                       className="hover:bg-black/20 rounded-full px-1 text-[10px]"
                       title="Clear company filter"
                     >
-                      ✕
+                      âœ•
                     </span>
                   ) : (
                     <ChevronDown size={12} className={`transition-transform text-zinc-400 hidden sm:inline ${isCompanyFilterOpen ? "rotate-180" : ""}`} />
@@ -617,7 +617,7 @@ export default function Feed({
                 {isCompanyFilterOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsCompanyFilterOpen(false)} />
-                    <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-zinc-950 border border-zinc-800 rounded-xl p-2 shadow-2xl flex flex-col gap-1.5 z-50 animate-fadeIn">
+                    <div className="absolute top-full left-0 mt-2 w-72 sm:w-80 max-w-[85vw] bg-zinc-950 border border-zinc-800 rounded-xl p-2 shadow-2xl flex flex-col gap-1.5 z-50 animate-fadeIn">
                       {/* Search box inside company popover */}
                       <div className="relative flex items-center">
                         <Search size={12} className="absolute left-2.5 text-zinc-500 pointer-events-none" />
@@ -626,7 +626,7 @@ export default function Feed({
                           placeholder="Search 100+ companies..."
                           value={companySearchQuery}
                           onChange={(e) => setCompanySearchQuery(e.target.value)}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-7 pr-3 py-1 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-7 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
                           autoFocus
                         />
                       </div>
@@ -635,7 +635,7 @@ export default function Feed({
                       <div className="max-h-[50vh] overflow-y-auto space-y-0.5 no-scrollbar">
                         <button
                           onClick={() => handleSelectCompany("All")}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
+                          className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium text-left transition-colors ${
                             selectedCompany === "All" ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
                           }`}
                         >
@@ -645,50 +645,69 @@ export default function Feed({
                           </span>
                         </button>
 
-                        {/* Featured Ecosystems section */}
+                        {/* Featured Ecosystems section — highlighted with logos */}
                         {filteredCompanyList.some(([c]) => /combinator|wellfound|devfolio|unstop/i.test(c)) && (
-                          <div className="pt-1.5 pb-0.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                            Ecosystems & Accelerators
+                          <div className="pt-2 pb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                            Ecosystems &amp; Accelerators
                           </div>
                         )}
                         {filteredCompanyList
                           .filter(([c]) => /combinator|wellfound|devfolio|unstop/i.test(c))
                           .map(([company, count]) => {
                             const isSelected = selectedCompany === company;
+                            const eco = /combinator/i.test(company)
+                              ? { logo: "https://www.google.com/s2/favicons?domain=ycombinator.com&sz=128", tag: "YC", tagBg: "bg-orange-500/15", tagText: "text-orange-400", accent: "border-orange-500/30", accentBg: "bg-orange-500/[0.06]", ring: "ring-orange-500/20" }
+                              : /wellfound/i.test(company)
+                              ? { logo: "https://www.google.com/s2/favicons?domain=wellfound.com&sz=128", tag: "AngelList", tagBg: "bg-emerald-500/15", tagText: "text-emerald-400", accent: "border-emerald-500/30", accentBg: "bg-emerald-500/[0.06]", ring: "ring-emerald-500/20" }
+                              : /devfolio/i.test(company)
+                              ? { logo: "https://www.google.com/s2/favicons?domain=devfolio.co&sz=128", tag: "Hacks", tagBg: "bg-indigo-500/15", tagText: "text-indigo-400", accent: "border-indigo-500/30", accentBg: "bg-indigo-500/[0.06]", ring: "ring-indigo-500/20" }
+                              : { logo: "https://www.google.com/s2/favicons?domain=unstop.com&sz=128", tag: "Platform", tagBg: "bg-blue-500/15", tagText: "text-blue-400", accent: "border-blue-500/30", accentBg: "bg-blue-500/[0.06]", ring: "ring-blue-500/20" };
+
                             return (
                               <button
                                 key={company}
                                 onClick={() => handleSelectCompany(company)}
-                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
-                                  isSelected ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium text-left transition-all border ${
+                                  isSelected
+                                    ? `${eco.accentBg} ${eco.accent} text-white font-semibold ring-1 ${eco.ring}`
+                                    : `border-transparent text-zinc-300 hover:text-white hover:${eco.accentBg} hover:border-zinc-800`
                                 }`}
                               >
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <span className="truncate">{company}</span>
-                                  {/combinator/i.test(company) && (
-                                    <span className="text-[9px] px-1 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono">YC</span>
-                                  )}
-                                  {/wellfound/i.test(company) && (
-                                    <span className="text-[9px] px-1 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono">AngelList</span>
-                                  )}
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={eco.logo}
+                                    alt={company}
+                                    width={18}
+                                    height={18}
+                                    className="rounded-[4px] shrink-0 ring-1 ring-white/10"
+                                    loading="lazy"
+                                  />
+                                  <span className="truncate font-semibold">{company}</span>
+                                  <span className={`text-[9px] px-1.5 py-0.5 ${eco.tagBg} ${eco.tagText} rounded-md font-mono font-bold shrink-0`}>{eco.tag}</span>
                                 </div>
-                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 ml-2 shrink-0">
+                                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ml-2 shrink-0 ${
+                                  isSelected ? `${eco.tagBg} ${eco.tagText} font-bold` : "bg-zinc-900 border border-zinc-800 text-zinc-400"
+                                }`}>
                                   {count}
                                 </span>
                               </button>
                             );
                           })}
 
-                        {/* Direct Companies section */}
+                        {/* Direct Companies section — with logos */}
                         {filteredCompanyList.some(([c]) => !/combinator|wellfound|devfolio|unstop/i.test(c)) && (
-                          <div className="pt-2 pb-0.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                            Companies & Employers
+                          <div className="pt-2.5 pb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                            Companies &amp; Employers
                           </div>
                         )}
                         {filteredCompanyList
                           .filter(([c]) => !/combinator|wellfound|devfolio|unstop/i.test(c))
                           .map(([company, count]) => {
                             const isSelected = selectedCompany === company;
+                            const companySlug = company.toLowerCase().replace(/\s+/g, '');
+                            const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(companySlug)}.com&sz=128`;
+
                             return (
                               <button
                                 key={company}
@@ -697,7 +716,19 @@ export default function Feed({
                                   isSelected ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
                                 }`}
                               >
-                                <span className="truncate">{company}</span>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={faviconUrl}
+                                    alt={company}
+                                    width={16}
+                                    height={16}
+                                    className="rounded-[3px] shrink-0 opacity-70"
+                                    loading="lazy"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                  <span className="truncate">{company}</span>
+                                </div>
                                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 ml-2 shrink-0">
                                   {count}
                                 </span>
@@ -755,7 +786,7 @@ export default function Feed({
           {actionError && (
             <div className="absolute left-1/2 -translate-x-1/2 top-3 bg-rose-500 text-white px-4 py-2 rounded-full font-bold text-xs pointer-events-auto shadow-2xl animate-fadeIn flex items-center gap-2 z-50">
               {actionError}
-              <button onClick={() => setActionError(null)} className="bg-black/20 px-1.5 py-0.5 rounded-full hover:bg-black/40 text-[10px]">✕</button>
+              <button onClick={() => setActionError(null)} className="bg-black/20 px-1.5 py-0.5 rounded-full hover:bg-black/40 text-[10px]">âœ•</button>
             </div>
           )}
           </div>
@@ -787,7 +818,7 @@ export default function Feed({
           )}
         </header>
  
-        {/* ── Active Filter Context Strip ── */}
+        {/* â”€â”€ Active Filter Context Strip â”€â”€ */}
         {selectedCompany !== "All" && (
           <div className="max-w-5xl mx-auto w-full px-3 sm:px-6 pt-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-zinc-300 bg-zinc-900/90 border border-zinc-800 rounded-lg px-3 py-1.5 shadow-sm">
@@ -806,7 +837,7 @@ export default function Feed({
           </div>
         )}
 
-        {/* ── Content View ── */}
+        {/* â”€â”€ Content View â”€â”€ */}
         {sortedOpps.length === 0 && !isFetching ? (
           /* Empty state with interactive MeshGradient mascot */
           <div className="w-full flex-1 flex flex-col items-center justify-center text-zinc-400 gap-4 px-6 text-center">
@@ -829,9 +860,9 @@ export default function Feed({
             )}
           </div>
         ) : viewMode === 'list' ? (
-          /* ══════════════════════════════════════
+          /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              MODE 1: CALM LIST VIEW (Default Desktop)
-             ══════════════════════════════════════ */
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
           <div
             key={`list-${filterKey}`}
             className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] max-w-5xl mx-auto w-full flex flex-col gap-2.5"
@@ -870,9 +901,9 @@ export default function Feed({
             <div ref={triggerRef} className="h-8 w-full" />
           </div>
         ) : viewMode === 'grid' ? (
-          /* ══════════════════════════════════════
+          /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              MODE 2: RELAXED GRID VIEW
-             ══════════════════════════════════════ */
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
           <div
             key={`grid-${filterKey}`}
             className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] max-w-7xl mx-auto w-full"
@@ -913,9 +944,9 @@ export default function Feed({
             <div ref={triggerRef} className="h-8 w-full" />
           </div>
         ) : (
-          /* ══════════════════════════════════════
+          /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
              MODE 3: FULL-SCREEN CARD SNAP FEED (Card View)
-             ══════════════════════════════════════ */
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
           <>
             <div
               key={`snap-${filterKey}`}
@@ -979,7 +1010,7 @@ export default function Feed({
           </>
         )}
 
-        {/* ── Floating Dock Navigation (Fixed bottom center — with iOS safe area support) ── */}
+        {/* â”€â”€ Floating Dock Navigation (Fixed bottom center â€” with iOS safe area support) â”€â”€ */}
         <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-16px)]">
           <Dock items={dockItems} separator={2} />
 
@@ -1011,7 +1042,7 @@ export default function Feed({
           )}
         </div>
 
-        {/* ── Slide-over QuickViewDrawer ── */}
+        {/* â”€â”€ Slide-over QuickViewDrawer â”€â”€ */}
         <QuickViewDrawer
           card={drawerCard}
           isOpen={Boolean(drawerCard)}
