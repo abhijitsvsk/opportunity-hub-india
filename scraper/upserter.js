@@ -175,7 +175,7 @@ async function upsertData(records, supabaseKey) {
 
   // Prepare normalized payloads
   const payloads = validRecords.map(record => {
-    const rawCompany = record.company || record.organization || record.organisation || null;
+    const rawCompany = record.company || record.organization || record.organisation || record.normalized_company || null;
     const payload = {
       title: record.title,
       type: sanitizeType(record.type),

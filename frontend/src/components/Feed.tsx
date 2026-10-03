@@ -18,6 +18,7 @@ import { MeshGradientSVG } from "./ui/shader-svg";
 import { computeMatchScore } from "@/lib/opportunities";
 import { matchesBatchFilter, BATCH_DEFINITIONS, BatchFilterKey } from "@/lib/eligibility";
 import { extractCompanyName } from "@/lib/branding";
+import { matchesCompanyFilter, matchesSearchQuery, DOMAIN_AND_TYPE_FILTERS } from "@/lib/filters";
 
 export default function Feed({
   initialOpportunities,
@@ -165,18 +166,18 @@ export default function Feed({
 
   const FILTER_DEFS = [
     { id: "All",           label: "All",           icon: <Rocket size={13} />,  match: (_: Opportunity) => true },
-    { id: "Competitions",  label: "Competitions",  icon: <Code2 size={13} />,   match: (op: Opportunity) => (op.type || '').toLowerCase() === "competition" || /contest|competition|codeforces|codechef|hackerrank|kaggle/i.test(op.title || "") },
-    { id: "Hackathons",    label: "Hackathons",    icon: <Zap size={13} />,     match: (op: Opportunity) => (op.type || '').toLowerCase() === "hackathon" || /hackathon/i.test(op.title || "") },
-    { id: "Internships",   label: "Internships",   icon: <Briefcase size={13} />, match: (op: Opportunity) => (op.type || '').toLowerCase() === "internship" || /intern/i.test(op.title || "") },
-    { id: "Full-time",     label: "Full-time",     icon: <Briefcase size={13} />, match: (op: Opportunity) => (op.type || '').toLowerCase() === "full-time" || /full.time|sde|engineer/i.test(op.title || "") },
-    { id: "Fellowships",   label: "Fellowships",   icon: <Star size={13} />,    match: (op: Opportunity) => (op.type || '').toLowerCase() === "fellowship" || /fellowship/i.test(op.title || "") },
-    { id: "Open Source",   label: "Open Source",   icon: <Globe size={13} />,   match: (op: Opportunity) => (op.type || '').toLowerCase().includes("open") || /open.source|gsoc|outreachy/i.test(op.title || "") },
-    { id: "AI & ML",       label: "AI & ML",       icon: <Brain size={13} />,   match: (op: Opportunity) => op.domain_tags?.some(t => /ai|machine learning|nlp|neural|deep learning|data/i.test(t)) || /ai|machine learning|nlp|neural|deep learning|data science|intelligence/i.test(op.title || "") },
-    { id: "Cybersecurity", label: "Cybersecurity", icon: <Shield size={13} />,  match: (op: Opportunity) => op.domain_tags?.some(t => /cyber|security|hacking|forensic|vulnerability/i.test(t)) || /cyber|security|vulnerability/i.test(op.title || "") },
-    { id: "Design",        label: "Design",        icon: <Palette size={13} />, match: (op: Opportunity) => op.domain_tags?.some(t => /design|ux|ui|graphic|visual|figma|adobe/i.test(t)) || /design|ux|ui|figma/i.test(op.title || "") },
-    { id: "Web3",          label: "Web3",          icon: <Globe size={13} />,   match: (op: Opportunity) => op.domain_tags?.some(t => /web3|blockchain|crypto|solidity/i.test(t)) || /web3|blockchain|crypto|solidity/i.test(op.title || "") },
-    { id: "Low Effort",    label: "Low Effort",    icon: <Zap size={13} />,     match: (op: Opportunity) => (op.effort_level || '').toLowerCase() === "low" },
-    { id: "High Stakes",   label: "High Stakes",   icon: <Flame size={13} />,   match: (op: Opportunity) => (op.competitiveness || '').toLowerCase() === "high" },
+    { id: "Competitions",  label: "Competitions",  icon: <Code2 size={13} />,   match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Competitions")?.match || (() => true) },
+    { id: "Hackathons",    label: "Hackathons",    icon: <Zap size={13} />,     match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Hackathons")?.match || (() => true) },
+    { id: "Internships",   label: "Internships",   icon: <Briefcase size={13} />, match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Internships")?.match || (() => true) },
+    { id: "Full-time",     label: "Full-time",     icon: <Briefcase size={13} />, match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Full-time")?.match || (() => true) },
+    { id: "Fellowships",   label: "Fellowships",   icon: <Star size={13} />,    match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Fellowships")?.match || (() => true) },
+    { id: "Open Source",   label: "Open Source",   icon: <Globe size={13} />,   match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Open Source")?.match || (() => true) },
+    { id: "AI & ML",       label: "AI & ML",       icon: <Brain size={13} />,   match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "AI & ML")?.match || (() => true) },
+    { id: "Cybersecurity", label: "Cybersecurity", icon: <Shield size={13} />,  match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Cybersecurity")?.match || (() => true) },
+    { id: "Design",        label: "Design",        icon: <Palette size={13} />, match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Design")?.match || (() => true) },
+    { id: "Web3",          label: "Web3",          icon: <Globe size={13} />,   match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Web3")?.match || (() => true) },
+    { id: "Low Effort",    label: "Low Effort",    icon: <Zap size={13} />,     match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "Low Effort")?.match || (() => true) },
+    { id: "High Stakes",   label: "High Stakes",   icon: <Flame size={13} />,   match: DOMAIN_AND_TYPE_FILTERS.find(f => f.id === "High Stakes")?.match || (() => true) },
   ];
 
   const fullyFilteredOpps = activeTab === "discover"
@@ -214,8 +215,17 @@ export default function Feed({
 
   const filteredCompanyList = useMemo(() => {
     if (!companySearchQuery.trim()) return companyCounts;
-    const q = companySearchQuery.toLowerCase();
-    return companyCounts.filter(([comp]) => comp.toLowerCase().includes(q));
+    const q = companySearchQuery.toLowerCase().trim();
+    const cleanQ = q.replace(/[\s\-_]/g, '');
+
+    return companyCounts.filter(([comp]) => {
+      const lower = comp.toLowerCase();
+      if (lower.includes(q)) return true;
+      const cleanComp = lower.replace(/[\s\-_]/g, '');
+      if (cleanComp.includes(cleanQ)) return true;
+      if (cleanQ === 'yc' && (cleanComp.includes('ycombinator') || cleanComp.includes('yc'))) return true;
+      return false;
+    });
   }, [companyCounts, companySearchQuery]);
 
   // Handle selecting a company — fetches directly if not yet in client memory
@@ -224,14 +234,25 @@ export default function Feed({
     setIsCompanyFilterOpen(false);
 
     if (company !== "All") {
+      const isYc = /y\s*combinator|\byc\b/i.test(company);
+      const isWf = /wellfound|\bangel\b/i.test(company);
+
       const hasLoadedMatches = allOpps.some(op => {
+        if (isYc) {
+          return (op.source_url && (op.source_url.includes('workatastartup.com') || op.source_url.includes('ycombinator.com'))) ||
+            (op.domain_tags && op.domain_tags.some(t => /^(yc|y combinator|ycombinator|work at a startup)$/i.test(t.trim())));
+        }
+        if (isWf) {
+          return (op.source_url && (op.source_url.includes('wellfound.com') || op.source_url.includes('angel.co'))) ||
+            (op.domain_tags && op.domain_tags.some(t => /^(wellfound|angellist)$/i.test(t.trim())));
+        }
         const opComp = extractCompanyName(op).toLowerCase();
         const rawComp = (op.normalized_company || '').toLowerCase();
         const target = company.toLowerCase();
         return opComp === target || rawComp.includes(target);
       });
 
-      if (!hasLoadedMatches) {
+      if (!hasLoadedMatches || isYc || isWf) {
         setIsFetching(true);
         try {
           const res = await fetch(`/api/opportunities?company=${encodeURIComponent(company)}`);
@@ -290,25 +311,13 @@ export default function Feed({
       return false;
     }
 
-    // 2. Dedicated company filter
-    if (selectedCompany !== "All") {
-      const opComp = extractCompanyName(op);
-      if (opComp.toLowerCase() !== selectedCompany.toLowerCase()) {
-        return false;
-      }
+    // 2. Dedicated company & ecosystem filter
+    if (!matchesCompanyFilter(op, selectedCompany)) {
+      return false;
     }
 
-    // 3. Search query filter (matches title, description, tags, type, company, source url)
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    const title = (op.title || '').toLowerCase();
-    const desc = (op.description || '').toLowerCase();
-    const tags = (op.domain_tags || []).join(' ').toLowerCase();
-    const type = (op.type || '').toLowerCase();
-    const comp = extractCompanyName(op).toLowerCase();
-    const rawComp = (op.normalized_company || '').toLowerCase();
-    const url = (op.source_url || '').toLowerCase();
-    return title.includes(q) || desc.includes(q) || tags.includes(q) || type.includes(q) || comp.includes(q) || rawComp.includes(q) || url.includes(q);
+    // 3. Smart collision-free search query filter
+    return matchesSearchQuery(op, searchQuery);
   });
 
   // Sort displayed opportunities
@@ -636,23 +645,65 @@ export default function Feed({
                           </span>
                         </button>
 
-                        {filteredCompanyList.map(([company, count]) => {
-                          const isSelected = selectedCompany === company;
-                          return (
-                            <button
-                              key={company}
-                              onClick={() => handleSelectCompany(company)}
-                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
-                                isSelected ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
-                              }`}
-                            >
-                              <span className="truncate">{company}</span>
-                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 ml-2 shrink-0">
-                                {count}
-                              </span>
-                            </button>
-                          );
-                        })}
+                        {/* Featured Ecosystems section */}
+                        {filteredCompanyList.some(([c]) => /combinator|wellfound|devfolio|unstop/i.test(c)) && (
+                          <div className="pt-1.5 pb-0.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                            Ecosystems & Accelerators
+                          </div>
+                        )}
+                        {filteredCompanyList
+                          .filter(([c]) => /combinator|wellfound|devfolio|unstop/i.test(c))
+                          .map(([company, count]) => {
+                            const isSelected = selectedCompany === company;
+                            return (
+                              <button
+                                key={company}
+                                onClick={() => handleSelectCompany(company)}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
+                                  isSelected ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                }`}
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="truncate">{company}</span>
+                                  {/combinator/i.test(company) && (
+                                    <span className="text-[9px] px-1 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono">YC</span>
+                                  )}
+                                  {/wellfound/i.test(company) && (
+                                    <span className="text-[9px] px-1 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono">AngelList</span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 ml-2 shrink-0">
+                                  {count}
+                                </span>
+                              </button>
+                            );
+                          })}
+
+                        {/* Direct Companies section */}
+                        {filteredCompanyList.some(([c]) => !/combinator|wellfound|devfolio|unstop/i.test(c)) && (
+                          <div className="pt-2 pb-0.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                            Companies & Employers
+                          </div>
+                        )}
+                        {filteredCompanyList
+                          .filter(([c]) => !/combinator|wellfound|devfolio|unstop/i.test(c))
+                          .map(([company, count]) => {
+                            const isSelected = selectedCompany === company;
+                            return (
+                              <button
+                                key={company}
+                                onClick={() => handleSelectCompany(company)}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors ${
+                                  isSelected ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                }`}
+                              >
+                                <span className="truncate">{company}</span>
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 ml-2 shrink-0">
+                                  {count}
+                                </span>
+                              </button>
+                            );
+                          })}
 
                         {filteredCompanyList.length === 0 && (
                           <div className="py-4 text-center text-xs text-zinc-500">
@@ -735,6 +786,25 @@ export default function Feed({
             </div>
           )}
         </header>
+ 
+        {/* ── Active Filter Context Strip ── */}
+        {selectedCompany !== "All" && (
+          <div className="max-w-5xl mx-auto w-full px-3 sm:px-6 pt-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-zinc-300 bg-zinc-900/90 border border-zinc-800 rounded-lg px-3 py-1.5 shadow-sm">
+              <Building2 size={13} className="text-zinc-400" />
+              <span>
+                Showing <strong className="text-white">{sortedOpps.length}</strong> opportunities from <strong className="text-white">{selectedCompany}</strong>
+              </span>
+              <button
+                onClick={() => setSelectedCompany("All")}
+                className="ml-2 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded px-1.5 py-0.5 text-[11px] cursor-pointer"
+                title="Clear company filter"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Content View ── */}
         {sortedOpps.length === 0 && !isFetching ? (

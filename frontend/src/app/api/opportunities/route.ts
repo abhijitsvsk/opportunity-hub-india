@@ -78,16 +78,58 @@ export async function GET(request: NextRequest) {
 
   const searchParam = searchParams.get("search");
   if (searchParam && searchParam.trim()) {
-    const q = searchParam.trim();
+    const rawQ = searchParam.trim();
+    const cleanQ = rawQ.toLowerCase().replace(/[\s\-_]/g, '');
+
+    const terms = new Set<string>([rawQ]);
+    let tagOv: string[] = [];
+
+    if (cleanQ === 'yc' || cleanQ === 'ycombinator' || cleanQ === 'ycombinations' || cleanQ === 'workatastartup') {
+      terms.add('Y Combinator');
+      terms.add('YC');
+      terms.add('ycombinator');
+      terms.add('workatastartup');
+      tagOv.push('"Y Combinator"', 'YC', 'ycombinator', '"Work at a Startup"');
+    } else if (cleanQ === 'wellfound' || cleanQ === 'angel' || cleanQ === 'angellist') {
+      terms.add('Wellfound');
+      terms.add('angel.co');
+      terms.add('angellist');
+      tagOv.push('Wellfound', 'AngelList', 'wellfound');
+    }
+
+    const orParts: string[] = [];
+    for (const term of terms) {
+      if (term.length <= 2) {
+        // Guard short <= 2 char queries from matching inside words in descriptions (e.g. "lifecycle")
+        orParts.push(`title.ilike.% ${term} %`);
+        orParts.push(`title.ilike.${term} %`);
+        orParts.push(`title.ilike.% ${term}`);
+        orParts.push(`normalized_company.ilike.%${term}%`);
+        orParts.push(`source_url.ilike.%${term}%`);
+      } else {
+        orParts.push(`title.ilike.%${term}%`);
+        orParts.push(`description.ilike.%${term}%`);
+        orParts.push(`normalized_company.ilike.%${term}%`);
+        orParts.push(`source_url.ilike.%${term}%`);
+      }
+    }
+
+    if (tagOv.length > 0) {
+      orParts.push(`domain_tags.ov.{${tagOv.join(',')}}`);
+    } else if (rawQ.length >= 2) {
+      orParts.push(`domain_tags.ov.{"${rawQ}"}`);
+    }
+
     const { data: searchData, error: searchErr } = await supabase
       .from('opportunities')
       .select('*')
       .eq('is_active', true)
-      .or(`title.ilike.%${q}%,description.ilike.%${q}%,normalized_company.ilike.%${q}%,location.ilike.%${q}%`)
+      .or(orParts.join(','))
       .order('created_at', { ascending: false })
       .range(start, end);
 
     if (searchErr) {
+      console.error("Search API error:", searchErr);
       return NextResponse.json({ error: searchErr.message }, { status: 500 });
     }
     return NextResponse.json({ opportunities: searchData || [] });
@@ -95,12 +137,24 @@ export async function GET(request: NextRequest) {
 
   const companyParam = searchParams.get("company");
   if (companyParam && companyParam !== "All") {
-    const { data: compData, error: compErr } = await supabase
+    const isYc = /y\s*combinator|\byc\b/i.test(companyParam);
+    const isWellfound = /wellfound|\bangel\b/i.test(companyParam);
+
+    let compQuery = supabase
       .from('opportunities')
       .select('*')
-      .eq('is_active', true)
-      .or(`normalized_company.ilike.%${companyParam}%,title.ilike.%${companyParam}%`)
-      .order('deadline', { ascending: true, nullsFirst: false })
+      .eq('is_active', true);
+
+    if (isYc) {
+      compQuery = compQuery.or('domain_tags.ov.{"Y Combinator",YC,ycombinator,"Work at a Startup"},source_url.ilike.%workatastartup%,source_url.ilike.%ycombinator.com%');
+    } else if (isWellfound) {
+      compQuery = compQuery.or('domain_tags.ov.{Wellfound,AngelList,wellfound},source_url.ilike.%wellfound%');
+    } else {
+      compQuery = compQuery.or(`normalized_company.ilike.%${companyParam}%,title.ilike.%${companyParam}%`);
+    }
+
+    const { data: compData, error: compErr } = await compQuery
+      .order('created_at', { ascending: false })
       .range(start, end);
 
     if (compErr) {

@@ -50,12 +50,12 @@ export default async function DashboardPage() {
     pagedOpportunities = data || [];
     totalPages = count ? Math.ceil(count / pageSize) : 1;
 
-    // Hydrate normalized_company and location which are omitted by the RPC function
+    // Hydrate normalized_company which is omitted by the RPC function
     if (pagedOpportunities.length > 0) {
       const oppIds = pagedOpportunities.map((o: any) => o.id);
       const { data: extras } = await supabase
         .from('opportunities')
-        .select('id, normalized_company, location')
+        .select('id, normalized_company')
         .in('id', oppIds);
 
       if (extras && extras.length > 0) {
@@ -65,7 +65,6 @@ export default async function DashboardPage() {
           return {
             ...o,
             normalized_company: extra?.normalized_company || o.normalized_company,
-            location: extra?.location || o.location,
           };
         });
       }

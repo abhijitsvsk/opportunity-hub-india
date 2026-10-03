@@ -64,7 +64,7 @@ function parseYcPage(html) {
         : (p.applyUrl ? p.applyUrl.replace(/&amp;/g, '&') : `https://www.ycombinator.com/companies/${p.companyUrl || ''}`);
 
       // Domain tags
-      const tags = new Set(['Startup', 'Y Combinator']);
+      const tags = new Set(['Startup', 'Y Combinator', 'YC', 'ycombinator', 'Work at a Startup']);
       if (p.roleSpecificType) tags.add(p.roleSpecificType);
       if (p.prettyRole) tags.add(p.prettyRole);
       if (Array.isArray(p.skills)) {
