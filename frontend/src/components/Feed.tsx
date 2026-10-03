@@ -12,9 +12,11 @@ import { Opportunity, UserSavedStatus } from "@/types";
 import OpportunityCard from "./OpportunityCard";
 import OpportunityRow from "./OpportunityRow";
 import OpportunityGridCard from "./OpportunityGridCard";
+import QuickViewDrawer from "./QuickViewDrawer";
 import { Dock } from "./ui/dock-two";
 import { MeshGradientSVG } from "./ui/shader-svg";
 import { computeMatchScore } from "@/lib/opportunities";
+import { matchesBatchFilter, BATCH_DEFINITIONS, BatchFilterKey } from "@/lib/eligibility";
 
 export default function Feed({
   initialOpportunities,
@@ -45,6 +47,8 @@ export default function Feed({
   const [filterKey, setFilterKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<'match' | 'deadline' | 'newest'>('match');
+  const [selectedBatch, setSelectedBatch] = useState<BatchFilterKey>('all');
+  const [drawerCard, setDrawerCard] = useState<Opportunity | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -178,8 +182,14 @@ export default function Feed({
       })()
     : activeOpps;
 
-  // Instant text search filter
+  // Instant text search filter & batch filter
   const displayedOpps = fullyFilteredOpps.filter(op => {
+    // 1. Graduation batch filter
+    if (selectedBatch !== 'all' && !matchesBatchFilter(op.eligibility, op.type, op.title, selectedBatch)) {
+      return false;
+    }
+
+    // 2. Search query filter
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     const title = (op.title || '').toLowerCase();
@@ -192,9 +202,21 @@ export default function Feed({
   // Sort displayed opportunities
   const sortedOpps = [...displayedOpps].sort((a, b) => {
     if (sortBy === 'deadline') {
+      const isAVerified = a.deadline && (a.deadline_confidence === 'exact' || a.deadline_confidence === 'computed_from_countdown');
+      const isBVerified = b.deadline && (b.deadline_confidence === 'exact' || b.deadline_confidence === 'computed_from_countdown');
+
+      // 1. Both verified: sort by closing soonest
+      if (isAVerified && isBVerified) {
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      }
+      // 2. Verified deadlines appear before unverified/rolling deadlines
+      if (isAVerified && !isBVerified) return -1;
+      if (!isAVerified && isBVerified) return 1;
+
+      // 3. Both rolling/unverified: sort by closest date
       const aDate = a.deadline ? new Date(a.deadline).getTime() : Infinity;
       const bDate = b.deadline ? new Date(b.deadline).getTime() : Infinity;
-      return aDate - bDate; // Closing soonest first
+      return aDate - bDate;
     }
     if (sortBy === 'newest') {
       const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -482,6 +504,32 @@ export default function Feed({
               <button onClick={() => setActionError(null)} className="bg-black/20 px-1.5 py-0.5 rounded-full hover:bg-black/40 text-[10px]">✕</button>
             </div>
           )}
+
+          {/* Graduation Batch Quick Filter Strip */}
+          {activeTab === "discover" && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 pb-0.5 border-t border-zinc-800/50 text-[11px] font-mono">
+              <span className="text-zinc-500 text-[10px] uppercase font-semibold shrink-0 mr-1 hidden sm:inline">
+                Cohort:
+              </span>
+              {BATCH_DEFINITIONS.map(batch => {
+                const isSelected = selectedBatch === batch.id;
+                return (
+                  <button
+                    key={batch.id}
+                    onClick={() => setSelectedBatch(batch.id)}
+                    title={batch.sublabel}
+                    className={`px-2.5 py-1 rounded-md shrink-0 border transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-white text-black border-white font-semibold shadow-sm"
+                        : "bg-zinc-900/90 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-zinc-200"
+                    }`}
+                  >
+                    {batch.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </header>
 
         {/* ── Content View ── */}
@@ -530,6 +578,7 @@ export default function Feed({
                     onShare={handleShare}
                     onStar={() => setActionError("Star functionality coming soon!")}
                     onStatusChange={handleStatusChange}
+                    onViewDetails={(c) => setDrawerCard(c)}
                   />
                 </div>
               );
@@ -571,6 +620,7 @@ export default function Feed({
                       onShare={handleShare}
                       onStar={() => setActionError("Star functionality coming soon!")}
                       onStatusChange={handleStatusChange}
+                      onViewDetails={(c) => setDrawerCard(c)}
                     />
                   </div>
                 );
@@ -665,7 +715,7 @@ export default function Feed({
               <div className="fixed inset-0 z-30" onClick={() => setShowProfileMenu(false)} />
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-1 z-50 animate-fadeIn">
                 <Link
-                  href="/onboarding"
+                  href="/profile"
                   onClick={() => setShowProfileMenu(false)}
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
                 >
@@ -686,6 +736,18 @@ export default function Feed({
             </>
           )}
         </div>
+
+        {/* ── Slide-over QuickViewDrawer ── */}
+        <QuickViewDrawer
+          card={drawerCard}
+          isOpen={Boolean(drawerCard)}
+          onClose={() => setDrawerCard(null)}
+          status={drawerCard ? optimisticSaved.get(drawerCard.id) : undefined}
+          isBookmarked={drawerCard ? !!optimisticSaved.get(drawerCard.id) : false}
+          onBookmark={handleBookmark}
+          onShare={handleShare}
+          profile={profile}
+        />
 
       </main>
     </div>

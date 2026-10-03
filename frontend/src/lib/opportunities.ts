@@ -97,3 +97,64 @@ export function cleanDomainTags(tags: string[] | undefined, maxTags = 4): { disp
 
   return { displayTags, remainingCount };
 }
+
+export interface DeadlineBadgeInfo {
+  tier: 'verified' | 'rolling' | 'none';
+  label: string;
+  diffDays: number | null;
+  isUrgent: boolean;
+  badgeClass: string;
+}
+
+export function getDeadlineBadgeInfo(deadline?: string | null, confidence?: string | null): DeadlineBadgeInfo {
+  if (!deadline) {
+    return {
+      tier: 'none',
+      label: 'Open',
+      diffDays: null,
+      isUrgent: false,
+      badgeClass: 'text-zinc-400 bg-zinc-900 border-zinc-800'
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const deadlineDate = new Date(deadline);
+  deadlineDate.setHours(0, 0, 0, 0);
+  const diffDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  const isVerified = confidence === 'exact' || confidence === 'computed_from_countdown';
+
+  if (!isVerified) {
+    return {
+      tier: 'rolling',
+      label: 'Rolling · Apply ASAP',
+      diffDays,
+      isUrgent: false,
+      badgeClass: 'text-amber-400/90 bg-amber-500/10 border-amber-500/25 font-medium'
+    };
+  }
+
+  // Verified deadline
+  const isUrgent = diffDays >= 0 && diffDays <= 3;
+  let label = '';
+  if (diffDays < 0) {
+    label = 'Expired';
+  } else if (diffDays === 0) {
+    label = 'Ends Today';
+  } else if (diffDays === 1) {
+    label = 'Ends Tomorrow';
+  } else {
+    label = `Ends in ${diffDays}d`;
+  }
+
+  return {
+    tier: 'verified',
+    label,
+    diffDays,
+    isUrgent,
+    badgeClass: isUrgent
+      ? 'text-rose-400 bg-rose-500/10 border-rose-500/25 font-bold'
+      : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25 font-medium'
+  };
+}

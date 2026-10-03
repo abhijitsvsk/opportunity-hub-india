@@ -9,6 +9,15 @@ Active development — Core platform is built, deployed, and operational. Focus 
 ## What Is Working
 
 - **Landing Page**: 3D ContainerScroll preview, WebGL shader mascot, dynamic opportunity counters.
+- **Dedicated `/profile` Settings Page**: Fully editable account settings (`/profile` & `ProfileForm.tsx`) for graduation cohort, college tier, primary focus area, and custom interactive tech stack pills, directly calibrating match scores with instant persistence.
+- **Honest 3-Tier Deadline Badges**: Badges across all 3 card layouts transparently delineate verified hard cutoffs (`⏳ Ends [Date]`) from rolling applications (`⚡ Rolling · Apply ASAP`) using database `deadline_confidence`.
+- **Verified-First Deadline Sorting**: "Closing Soon" feed sort prioritizes real verified closing countdowns ahead of rolling listings.
+- **Graduation Batch Filter Bar**: One-click cohort switcher (`All Batches` | `2025 Full-Time` | `2026 Pre-Final Intern` | `2027/28 Early Undergrad`) with unified eligibility normalization handling all 3 database formats (`year`, `segments`, `education`).
+- **Slide-Over Quick-View Drawer (`QuickViewDrawer.tsx`)**: Instant preview panel on card click featuring formatted job overview, requirements breakdown, match score analysis, direct ATS link, and keyboard accessibility (`Escape` to close).
+- **1-Click Google Calendar Sync**: Embedded one-click GCal event creation with title, deadline timestamps, and official application URL.
+- **Company Logo Hydration**: Automated high-res favicon and brand logo resolution via Google Favicon API in `branding.ts`, with graceful fallback to styled monograms.
+- **Semantic Title Deduplication (`dedup-titles.js`)**: Post-processing pipeline deduplicator eliminates multi-source duplicate listings (e.g. 21x copies of same hackathons) by clustering normalized titles, scoring metadata quality, and keeping the single best record.
+- **Smart Dead-Link Reaper Engine (`reaper.js` & `.github/workflows/reaper.yml`)**: Two-tier link health verification detecting HTTP 404/410 errors and ATS-specific closure text ("no longer accepting applications", "position has been filled") with daily automated cleanup.
 - **Authentication**: Supabase SSR (Email/Password, GitHub OAuth, Google OAuth) with session refresh. Dynamic Sign-In / Sign-Up toggle (`modern-stunning-sign-in.tsx`), graceful `NEXT_REDIRECT` error filtering, client & server validation, and try/catch network timeout resilience in `actions.ts`.
 - **Onboarding Flow**: 2-step profile onboarding (`user_profiles`) capturing tier, graduation year, tech stack, focus area. Redirects seamlessly upon first registration.
 - **Multi-View Dashboard Feed**:
@@ -19,7 +28,6 @@ Active development — Core platform is built, deployed, and operational. Focus 
   - Compact single-bar header on mobile and desktop with unified instant search and sort controls (`Best Match | Closing Soon | Newest`)
   - Filter state, search, sort, and view mode persistence
 - **Decoupled Business Logic**: `src/lib/opportunities.ts` houses `computeMatchScore` and `cleanDomainTags` independently from UI components.
-- **Robust Authentication**: Dynamic Sign-In / Sign-Up toggle (`modern-stunning-sign-in.tsx`), graceful `NEXT_REDIRECT` error filtering, and React `startTransition` GitHub OAuth.
 - **Application Tracking**: React 19 optimistic updates for stages (`to_apply`, `applied`, `accepted`, `rejected`, `archived`).
 - **Admin Portal**: Server-gated (`ADMIN_EMAIL`) manual opportunity manager and GitHub Actions scraper trigger.
 - **Scraper Pipeline (13 sources)**:

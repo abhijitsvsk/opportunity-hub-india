@@ -548,6 +548,12 @@ async function main() {
 
   // POST-PIPELINE: Cross-Source Deduplication & Expiry Verification
   await runCrossSourceDeduplication();
+  try {
+    const { runSemanticDeduplication } = require('./dedup-titles');
+    await runSemanticDeduplication(false);
+  } catch (err) {
+    console.warn('[Semantic Dedup] Warning during title deduplication:', err.message);
+  }
   await autoExpireOpportunities();
 
   const totalDuration = ((Date.now() - pipelineStartTime) / 1000).toFixed(1);

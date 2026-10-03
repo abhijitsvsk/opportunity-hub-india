@@ -4,7 +4,7 @@ import React from "react";
 import { Bookmark, Share2, ExternalLink, Star } from "lucide-react";
 import { Opportunity } from "@/types";
 import { getBrandInfo } from "@/lib/branding";
-import { computeMatchScore, cleanDomainTags } from "@/lib/opportunities";
+import { computeMatchScore, cleanDomainTags, getDeadlineBadgeInfo } from "@/lib/opportunities";
 
 interface OpportunityRowProps {
   card: Opportunity;
@@ -16,6 +16,7 @@ interface OpportunityRowProps {
   onShare: (url: string) => void;
   onStar: () => void;
   onStatusChange: (id: string, newStatus: string) => void;
+  onViewDetails?: (card: Opportunity) => void;
 }
 
 export default function OpportunityRow({
@@ -28,30 +29,37 @@ export default function OpportunityRow({
   onShare,
   onStar,
   onStatusChange,
+  onViewDetails,
 }: OpportunityRowProps) {
   const brand = getBrandInfo(card.title, card.source_url, card.type);
   const { score: matchScore, label: matchLabel } = computeMatchScore(card, profile);
   const { displayTags, remainingCount } = cleanDomainTags(card.domain_tags, 3);
-
-  // Deadline calculation
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const deadlineDate = new Date(card.deadline);
-  deadlineDate.setHours(0, 0, 0, 0);
-  const diffDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const closingSoon = diffDays >= 0 && diffDays <= 3;
+  const deadlineBadge = getDeadlineBadgeInfo(card.deadline, card.deadline_confidence);
 
   return (
-    <div className="w-full bg-[#121215]/80 hover:bg-[#18181e] border border-zinc-800/80 hover:border-zinc-700/90 rounded-2xl p-3.5 sm:p-4.5 transition-all duration-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 group shadow-sm hover:shadow-xl hover:shadow-black/40">
+    <div 
+      onClick={() => onViewDetails?.(card)}
+      className="w-full bg-[#121215]/80 hover:bg-[#18181e] border border-zinc-800/80 hover:border-zinc-700/90 rounded-2xl p-3.5 sm:p-4.5 transition-all duration-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 group shadow-sm hover:shadow-xl hover:shadow-black/40 cursor-pointer"
+    >
       
       {/* ── Left side: Brand Logo + Details ── */}
       <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
-        {/* Monogram Badge */}
+        {/* Monogram Badge / Logo */}
         <div
-          className={`w-11 h-11 rounded-xl border flex items-center justify-center font-mono font-bold text-xs tracking-wider shrink-0 transition-transform group-hover:scale-105 ${brand.badgeBg} ${brand.badgeText} ${brand.badgeBorder}`}
+          className={`w-11 h-11 rounded-xl border flex items-center justify-center font-mono font-bold text-xs tracking-wider shrink-0 transition-transform group-hover:scale-105 overflow-hidden ${brand.badgeBg} ${brand.badgeText} ${brand.badgeBorder}`}
           title={brand.label}
         >
-          {brand.monogram}
+          {brand.logoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img 
+              src={brand.logoUrl} 
+              alt={brand.label} 
+              className="w-6 h-6 object-contain rounded"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          ) : (
+            brand.monogram
+          )}
         </div>
 
         {/* Text info */}
@@ -102,17 +110,13 @@ export default function OpportunityRow({
           </div>
         )}
 
-        {/* Deadline urgency */}
-        {isMounted && diffDays >= 0 && (
+        {/* Deadline badge */}
+        {isMounted && (
           <span
-            className={`text-[11px] font-mono px-2.5 py-1 rounded-md border flex items-center gap-1.5 shrink-0 ${
-              closingSoon
-                ? "text-rose-400 bg-rose-500/10 border-rose-500/25 font-bold"
-                : "text-zinc-400 bg-zinc-900 border-zinc-800 font-medium"
-            }`}
+            className={`text-[11px] font-mono px-2.5 py-1 rounded-md border flex items-center gap-1.5 shrink-0 ${deadlineBadge.badgeClass}`}
           >
-            {closingSoon && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
-            {diffDays === 0 ? "Ends Today" : `Ends in ${diffDays}d`}
+            {deadlineBadge.isUrgent && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
+            {deadlineBadge.label}
           </span>
         )}
 
@@ -120,7 +124,7 @@ export default function OpportunityRow({
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Share */}
           <button
-            onClick={() => onShare(card.source_url)}
+            onClick={(e) => { e.stopPropagation(); onShare(card.source_url); }}
             title="Share"
             className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
           >
@@ -129,7 +133,7 @@ export default function OpportunityRow({
 
           {/* Star */}
           <button
-            onClick={onStar}
+            onClick={(e) => { e.stopPropagation(); onStar(); }}
             title="Star"
             className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
           >
@@ -138,7 +142,7 @@ export default function OpportunityRow({
 
           {/* Bookmark */}
           <button
-            onClick={() => onBookmark(card.id, status)}
+            onClick={(e) => { e.stopPropagation(); onBookmark(card.id, status); }}
             title={isBookmarked ? "Remove bookmark" : "Bookmark"}
             className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg border flex items-center justify-center transition-colors cursor-pointer active:scale-95 ${
               isBookmarked

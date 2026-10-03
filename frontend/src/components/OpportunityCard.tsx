@@ -4,7 +4,7 @@ import React from "react";
 import { Bookmark, Share2, Star } from "lucide-react";
 import { Opportunity } from "@/types";
 import { getBrandInfo } from "@/lib/branding";
-import { computeMatchScore, cleanDomainTags } from "@/lib/opportunities";
+import { computeMatchScore, cleanDomainTags, getDeadlineBadgeInfo } from "@/lib/opportunities";
 
 interface OpportunityCardProps {
   card: Opportunity;
@@ -30,14 +30,7 @@ export default function OpportunityCard({
   onStatusChange,
 }: OpportunityCardProps) {
   const brand = getBrandInfo(card.title, card.source_url, card.type);
-
-  // Deadline calculation
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const deadlineDate = new Date(card.deadline);
-  deadlineDate.setHours(0, 0, 0, 0);
-  const diffDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const closingSoon = diffDays >= 0 && diffDays <= 3;
+  const deadlineBadge = getDeadlineBadgeInfo(card.deadline, card.deadline_confidence);
 
   // Real computed match score from user profile
   const { score: matchScore, label: matchLabel } = computeMatchScore(card, profile);
@@ -62,16 +55,14 @@ export default function OpportunityCard({
             {/* Deadline badge */}
             {!isMounted ? (
               <div className="h-5 w-18 bg-zinc-800/50 rounded-md animate-shimmer" />
-            ) : closingSoon ? (
-              <span className="inline-flex items-center gap-1.5 text-rose-400 font-bold text-[11px] font-mono tracking-wide uppercase border border-rose-500/25 bg-rose-500/10 px-2.5 py-[3px] rounded-md self-start">
-                <span className="w-[6px] h-[6px] rounded-full bg-rose-500 animate-pulse" />
-                {diffDays === 0 ? 'ENDS TODAY' : `ENDS IN ${diffDays}D`}
+            ) : (
+              <span
+                className={`inline-flex items-center gap-1.5 text-[11px] font-mono tracking-wide uppercase px-2.5 py-[3px] rounded-md self-start border ${deadlineBadge.badgeClass}`}
+              >
+                {deadlineBadge.isUrgent && <span className="w-[6px] h-[6px] rounded-full bg-rose-500 animate-pulse" />}
+                {deadlineBadge.label}
               </span>
-            ) : diffDays > 0 ? (
-              <span className="inline-flex items-center gap-1.5 text-zinc-400 font-medium text-[11px] font-mono tracking-wide uppercase border border-zinc-800 bg-zinc-900 px-2.5 py-[3px] rounded-md self-start">
-                ENDS IN {diffDays}D
-              </span>
-            ) : null}
+            )}
 
             {/* Type badge */}
             <div className="inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-300 uppercase self-start">
