@@ -1,13 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: [
-    "localhost",
-    "localhost:3000",
-    "127.0.0.1",
-    "127.0.0.1:3000",
-    "192.168.1.3",
-    "192.168.1.3:3000",
+  headers: async () => [
+    {
+      source: '/(.*)',
+      headers: [
+        { key: 'X-Frame-Options', value: 'DENY' },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'X-DNS-Prefetch-Control', value: 'on' },
+        { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+      ],
+    },
   ],
 };
 

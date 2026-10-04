@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: ['/', '/api/og'],
       disallow: ['/admin', '/api/'],
     },
-    sitemap: 'https://opportunity-hub-india.vercel.app/sitemap.xml',
+    sitemap: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in'}/sitemap.xml`,
   };
 }

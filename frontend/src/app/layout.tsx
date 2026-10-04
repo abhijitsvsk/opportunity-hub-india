@@ -23,6 +23,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in'),
   title: "Opportunity Hub India — Verified Tech Opportunities",
   description: "Aggregating 1,500+ verified internships, hackathons, and open-source programs for Indian CS students.",
   manifest: "/manifest.json",

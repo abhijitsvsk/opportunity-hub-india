@@ -9,12 +9,12 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Opportunity Hub — Internships, Hackathons & Fellowships for Indian CS Students 🇮🇳",
-  description: "Stop missing deadlines. Discover and track 460+ verified tech internships, hackathons, and open-source programs ranked for your profile.",
-  metadataBase: new URL('https://opportunity-hub-india.vercel.app'),
+  description: "Stop missing deadlines. Discover and track 1,500+ verified tech internships, hackathons, and open-source programs ranked for your profile.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in'),
   openGraph: {
     title: "Opportunity Hub — Tech Opportunities for Indian CS Students 🇮🇳",
-    description: "Discover and track 460+ verified internships, hackathons, and open-source programs ranked for your profile.",
-    url: "https://opportunity-hub-india.vercel.app",
+    description: "Discover and track 1,500+ verified internships, hackathons, and open-source programs ranked for your profile.",
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in',
     siteName: "Opportunity Hub",
     locale: "en_IN",
     type: "website",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Opportunity Hub — Tech Opportunities for Indian CS Students 🇮🇳",
-    description: "Discover and track 460+ verified internships, hackathons, and open-source programs ranked for your profile.",
+    description: "Discover and track 1,500+ verified internships, hackathons, and open-source programs ranked for your profile.",
   },
 };
 
