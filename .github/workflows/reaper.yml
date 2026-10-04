@@ -1,19 +1,27 @@
-name: Dead Link Reaper
+name: OppHunt Link Health Reaper
 
 on:
   schedule:
-    # Run daily at 06:00 UTC (11:30 AM IST)
-    - cron: '0 6 * * *'
+    # Run daily at 11:30 UTC (5:00 PM IST)
+    - cron: '30 11 * * *'
   workflow_dispatch:
     inputs:
+      mode:
+        description: 'Execution mode (audit = zero DB mutations, live = requires confirmation)'
+        type: choice
+        options:
+          - audit
+          - live
+        default: 'audit'
       limit:
-        description: 'Number of opportunities to check'
+        description: 'Maximum opportunities to verify'
         required: false
-        default: '300'
+        default: '2000'
 
 jobs:
-  reap-dead-links:
+  reap-link-health:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Check out repository
@@ -30,9 +38,26 @@ jobs:
         working-directory: ./scraper
         run: npm ci
 
-      - name: Run Dead Link Reaper
+      - name: Run Link Health Reaper
         working-directory: ./scraper
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: node reaper.js --live --limit=${{ github.event.inputs.limit || '300' }}
+          GLOBAL_CONCURRENCY: '12'
+          PER_DOMAIN_CONCURRENCY: '2'
+          SAME_DOMAIN_MIN_DELAY_MS: '350'
+          INGESTION_GRACE_HOURS: '24'
+        run: |
+          MODE_FLAG="--audit"
+          if [ "${{ github.event.inputs.mode }}" = "live" ]; then
+            MODE_FLAG="--live"
+          fi
+          node reaper.js $MODE_FLAG --limit=${{ github.event.inputs.limit || '2000' }}
+
+      - name: Upload Audit Report Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reaper-health-report
+          path: scraper/reaper-report.json
+          retention-days: 14
