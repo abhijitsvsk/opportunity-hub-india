@@ -67,7 +67,6 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **Environment Validation Gap**: `validate-env.js` checks for `GEMINI_API_KEY` but does not validate `GROQ_API_KEY` or `NVIDIA_API_KEY`.
 - **Vercel Project Target Mismatch**: Root `.vercel/project.json` targets `opportunity-hub-india` while `frontend/.vercel/project.json` targets `frontend`.
 - **`frontend/DESIGN.md` Divergence**: The design file references a legacy restaurant POS spec, whereas the actual codebase implements the Obsidian/Zinc developer design system (`globals.css`).
-- **Profile Page**: `/profile` currently redirects directly to `/onboarding`.
 - **Static Programs Staleness**: Evergreen listings in `static.js` log warnings if `manually_verified_date` is older than 30 days.
 
 ## What Is Not Yet Implemented

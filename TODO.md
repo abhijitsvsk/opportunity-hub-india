@@ -24,6 +24,13 @@
 - [x] `pg_cron` daily schedule for sending deadline reminder emails
 - [x] GitHub Actions daily 00:00 UTC scrape cron and Supabase/GitHub keepalive workflows
 - [x] Auto-expiry of past-deadline opportunities
+- [x] Progressive Web App (PWA) with manifest.json, service worker, and generated PNG icons
+- [x] Dynamic Open Graph preview cards via @vercel/og and /api/og endpoint
+- [x] Dedicated SEO Opportunity Detail pages (/opportunity/[id]) with schema.org JSON-LD
+- [x] Dynamic sitemap.ts and robots.ts with custom domain support (opphunt.in)
+- [x] PostHog Analytics client integration
+- [x] Production hardening: security headers, global error.tsx and not-found.tsx boundaries
+- [x] Dedicated `/profile` settings view with instant Match Score preference persistence
 
 ## In Progress
 
@@ -35,7 +42,6 @@
 - [ ] Add `GROQ_API_KEY` validation to `scraper/validate-env.js` (currently checks `GEMINI_API_KEY` while Groq is the active engine)
 - [ ] Align `.vercel/project.json` configs (root vs `frontend/`) to prevent deployment targeting confusion
 - [ ] Sync `frontend/DESIGN.md` with actual Obsidian/Zinc developer design tokens (`globals.css`)
-- [ ] Build dedicated `/profile` view instead of redirecting straight to `/onboarding`
 - [ ] Fix cross-source deduplication in `pipeline.js` to preserve the record with the most complete metadata rather than strictly the oldest
 
 ## Medium Priority
