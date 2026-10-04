@@ -58,9 +58,9 @@ function parseYcPage(html) {
       const isIntern = /intern/i.test(p.title) || /intern/i.test(p.type || '');
       const oppType = isIntern ? 'internship' : 'full-time';
 
-      // Build source URL
+      // Build source URL (hosted on ycombinator.com)
       const sourceUrl = p.url 
-        ? (p.url.startsWith('http') ? p.url : `https://www.workatastartup.com${p.url}`)
+        ? (p.url.startsWith('http') ? p.url : `https://www.ycombinator.com${p.url}`)
         : (p.applyUrl ? p.applyUrl.replace(/&amp;/g, '&') : `https://www.ycombinator.com/companies/${p.companyUrl || ''}`);
 
       // Domain tags
