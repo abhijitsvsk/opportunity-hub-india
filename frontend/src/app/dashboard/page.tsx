@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Feed from "@/components/Feed";
 import { getUserProfile } from "@/app/actions";
+import { diversifyFeed } from "@/lib/feed-diversification";
 
 export const dynamic = 'force-dynamic';
 
@@ -100,7 +101,7 @@ export default async function DashboardPage() {
   
   return (
     <Feed 
-      initialOpportunities={pagedOpportunities || []} 
+      initialOpportunities={diversifyFeed(pagedOpportunities || [])} 
       savedStatuses={savedStatuses} 
       user={user}
       profile={profile}

@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { diversifyFeed } from "@/lib/feed-diversification";
 
 export async function GET(request: NextRequest) {
   // 1. Explicitly check for cancellation to save database compute
@@ -192,5 +193,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ opportunities });
+  return NextResponse.json({ opportunities: diversifyFeed(opportunities) });
 }

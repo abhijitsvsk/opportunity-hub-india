@@ -19,6 +19,8 @@ import { computeMatchScore } from "@/lib/opportunities";
 import { matchesBatchFilter, BATCH_DEFINITIONS, BatchFilterKey } from "@/lib/eligibility";
 import { extractCompanyName } from "@/lib/branding";
 import { matchesCompanyFilter, matchesSearchQuery, DOMAIN_AND_TYPE_FILTERS } from "@/lib/filters";
+import { cn } from "@/lib/utils";
+import { diversifyFeed } from "@/lib/feed-diversification";
 
 export default function Feed({
   initialOpportunities,
@@ -56,6 +58,7 @@ export default function Feed({
   const [companySearchQuery, setCompanySearchQuery] = useState("");
   const [drawerCard, setDrawerCard] = useState<Opportunity | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showDiscoverMenu, setShowDiscoverMenu] = useState(false);
   const [, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -320,35 +323,40 @@ export default function Feed({
     return matchesSearchQuery(op, searchQuery);
   });
 
-  // Sort displayed opportunities
-  const sortedOpps = [...displayedOpps].sort((a, b) => {
-    if (sortBy === 'deadline') {
-      const isAVerified = a.deadline && (a.deadline_confidence === 'exact' || a.deadline_confidence === 'computed_from_countdown');
-      const isBVerified = b.deadline && (b.deadline_confidence === 'exact' || b.deadline_confidence === 'computed_from_countdown');
+  // Sort displayed opportunities with anti-monopoly diversification
+  const sortedOpps = useMemo(() => {
+    const sorted = [...displayedOpps].sort((a, b) => {
+      if (sortBy === 'deadline') {
+        const isAVerified = a.deadline && (a.deadline_confidence === 'exact' || a.deadline_confidence === 'computed_from_countdown');
+        const isBVerified = b.deadline && (b.deadline_confidence === 'exact' || b.deadline_confidence === 'computed_from_countdown');
 
-      // 1. Both verified: sort by closing soonest
-      if (isAVerified && isBVerified) {
-        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        // 1. Both verified: sort by closing soonest
+        if (isAVerified && isBVerified) {
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        }
+        // 2. Verified deadlines appear before unverified/rolling deadlines
+        if (isAVerified && !isBVerified) return -1;
+        if (!isAVerified && isBVerified) return 1;
+
+        // 3. Both rolling/unverified: sort by closest date
+        const aDate = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+        const bDate = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+        return aDate - bDate;
       }
-      // 2. Verified deadlines appear before unverified/rolling deadlines
-      if (isAVerified && !isBVerified) return -1;
-      if (!isAVerified && isBVerified) return 1;
+      if (sortBy === 'newest') {
+        const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bDate - aDate; // Newest first
+      }
+      // 'match' — sort by match score descending (requires profile)
+      const aScore = computeMatchScore(a, profile).score;
+      const bScore = computeMatchScore(b, profile).score;
+      return bScore - aScore;
+    });
 
-      // 3. Both rolling/unverified: sort by closest date
-      const aDate = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-      const bDate = b.deadline ? new Date(b.deadline).getTime() : Infinity;
-      return aDate - bDate;
-    }
-    if (sortBy === 'newest') {
-      const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return bDate - aDate; // Newest first
-    }
-    // 'match' â€” sort by match score descending (requires profile)
-    const aScore = computeMatchScore(a, profile).score;
-    const bScore = computeMatchScore(b, profile).score;
-    return bScore - aScore;
-  });
+    // Apply anti-monopoly diversification so one company never dominates consecutive cards
+    return sortBy === 'match' ? diversifyFeed(sorted) : sorted;
+  }, [displayedOpps, sortBy, profile]);
 
   const handleFilterChange = useCallback((filterId: string) => {
     setActiveFilters(prev => {
@@ -466,44 +474,37 @@ export default function Feed({
 
   const activeFilterCount = activeFilters.has("All") ? 0 : activeFilters.size;
 
-  // Dock items â€” Navigation section + View mode section
+  // Dock items — Navigation section (Discover, Saved, Profile)
+  // List, Grid, and Card views are nested under "Discover"
   const dockItems = [
     {
       icon: Compass,
-      label: "Discover",
-      onClick: () => setActiveTab("discover"),
+      label: `Discover • ${viewMode === 'list' ? 'List' : viewMode === 'grid' ? 'Grid' : 'Card'}`,
+      onClick: () => {
+        setActiveTab("discover");
+        setShowDiscoverMenu(prev => !prev);
+        setShowProfileMenu(false);
+      },
       isActive: activeTab === "discover",
     },
     {
       icon: Bookmark,
       label: `Saved (${optimisticSaved.size})`,
-      onClick: () => setActiveTab("saved"),
+      onClick: () => {
+        setActiveTab("saved");
+        setShowDiscoverMenu(false);
+        setShowProfileMenu(false);
+      },
       isActive: activeTab === "saved",
     },
     {
       icon: User,
       label: "Profile",
-      onClick: () => setShowProfileMenu(prev => !prev),
+      onClick: () => {
+        setShowProfileMenu(prev => !prev);
+        setShowDiscoverMenu(false);
+      },
       isActive: false,
-    },
-    // --- separator at index 2 ---
-    {
-      icon: Rows3,
-      label: "List View",
-      onClick: () => handleViewModeChange("list"),
-      isActive: viewMode === "list",
-    },
-    {
-      icon: LayoutGrid,
-      label: "Grid View",
-      onClick: () => handleViewModeChange("grid"),
-      isActive: viewMode === "grid",
-    },
-    {
-      icon: Layers,
-      label: "Card View",
-      onClick: () => handleViewModeChange("card"),
-      isActive: viewMode === "card",
     },
   ];
 
@@ -1010,15 +1011,84 @@ export default function Feed({
           </>
         )}
 
-        {/* â”€â”€ Floating Dock Navigation (Fixed bottom center â€” with iOS safe area support) â”€â”€ */}
+        {/* ── Floating Dock Navigation (Fixed bottom center — with iOS safe area support) ── */}
         <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-16px)]">
-          <Dock items={dockItems} separator={2} />
+          <Dock items={dockItems} />
+
+          {/* Discover view mode switcher popover */}
+          {showDiscoverMenu && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setShowDiscoverMenu(false)} />
+              <div className="absolute bottom-full left-0 mb-2.5 w-48 bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl p-1.5 z-50 animate-fadeIn">
+                <div className="px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-500 border-b border-zinc-800/80 mb-1">
+                  View Mode
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleViewModeChange("list");
+                    setShowDiscoverMenu(false);
+                  }}
+                  className={cn(
+                    "flex items-center justify-between w-full px-2.5 py-2 text-xs font-medium rounded-xl transition-all cursor-pointer",
+                    viewMode === "list"
+                      ? "bg-white text-black font-semibold shadow-sm"
+                      : "text-zinc-300 hover:text-white hover:bg-zinc-800"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <Rows3 size={15} />
+                    <span>List View</span>
+                  </div>
+                  {viewMode === "list" && <CheckCircle2 size={13} className="text-black" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleViewModeChange("grid");
+                    setShowDiscoverMenu(false);
+                  }}
+                  className={cn(
+                    "flex items-center justify-between w-full px-2.5 py-2 text-xs font-medium rounded-xl transition-all cursor-pointer",
+                    viewMode === "grid"
+                      ? "bg-white text-black font-semibold shadow-sm"
+                      : "text-zinc-300 hover:text-white hover:bg-zinc-800"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <LayoutGrid size={15} />
+                    <span>Grid View</span>
+                  </div>
+                  {viewMode === "grid" && <CheckCircle2 size={13} className="text-black" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleViewModeChange("card");
+                    setShowDiscoverMenu(false);
+                  }}
+                  className={cn(
+                    "flex items-center justify-between w-full px-2.5 py-2 text-xs font-medium rounded-xl transition-all cursor-pointer",
+                    viewMode === "card"
+                      ? "bg-white text-black font-semibold shadow-sm"
+                      : "text-zinc-300 hover:text-white hover:bg-zinc-800"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <Layers size={15} />
+                    <span>Card Snap</span>
+                  </div>
+                  {viewMode === "card" && <CheckCircle2 size={13} className="text-black" />}
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Profile popover menu */}
           {showProfileMenu && (
             <>
               <div className="fixed inset-0 z-30" onClick={() => setShowProfileMenu(false)} />
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-1 z-50 animate-fadeIn">
+              <div className="absolute bottom-full right-0 mb-2.5 w-40 bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-xl shadow-2xl p-1 z-50 animate-fadeIn">
                 <Link
                   href="/profile"
                   onClick={() => setShowProfileMenu(false)}
@@ -1035,7 +1105,7 @@ export default function Feed({
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                 >
                   <LogOut size={14} />
-                  Log Out
+                  Sign Out
                 </button>
               </div>
             </>
