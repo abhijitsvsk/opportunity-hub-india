@@ -230,10 +230,18 @@ export async function signOut() {
   redirect("/");
 }
 
+async function getAuthRedirectOrigin(): Promise<string> {
+  const headerList = await headers();
+  const host = headerList.get("x-forwarded-host") || headerList.get("host");
+  const proto = headerList.get("x-forwarded-proto") || "https";
+  const origin = headerList.get("origin") || (host ? `${proto}://${host}` : process.env.NEXT_PUBLIC_SITE_URL || "");
+  return origin;
+}
+
 export async function signInWithGithub() {
   try {
     const supabase = await createClient();
-    const origin = (await headers()).get("origin");
+    const origin = await getAuthRedirectOrigin();
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
@@ -254,6 +262,37 @@ export async function signInWithGithub() {
     }
     console.error("signInWithGithub error:", err);
     redirect(`/login?error=${encodeURIComponent("Failed to initialize GitHub login.")}`);
+  }
+}
+
+export async function signInWithGoogle() {
+  try {
+    const supabase = await createClient();
+    const origin = await getAuthRedirectOrigin();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (error) {
+      redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    }
+
+    if (data.url) {
+      redirect(data.url);
+    }
+  } catch (err: any) {
+    if (err?.digest?.includes("NEXT_REDIRECT") || err?.message?.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
+    console.error("signInWithGoogle error:", err);
+    redirect(`/login?error=${encodeURIComponent("Failed to initialize Google login.")}`);
   }
 }
 

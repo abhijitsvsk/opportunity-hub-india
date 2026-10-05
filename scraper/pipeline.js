@@ -17,6 +17,7 @@ const { scrapeFreehire } = require('./freehire');
 const { scrapeWorkdayCompanies } = require('./workday-companies');
 const { scrapeYcStartups } = require('./yc-startups');
 const { scrapeWellfound } = require('./wellfound');
+const { sanitizeOpportunityUrl } = require('./url-sanitizer');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -45,8 +46,19 @@ async function processRawRecordsWithGemini(sourceName, rawRecords, rateLimiter) 
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
 
+  // 0. CANONICALIZE & SANITIZE ALL INCOMING URLs
+  const sanitizedRecords = (rawRecords || []).map(r => {
+    if (!r.source_url) return r;
+    const sanitization = sanitizeOpportunityUrl(r.source_url);
+    if (!sanitization.valid) {
+      console.warn(`[Pipeline Ingestion Firewall] Dropped invalid/unsafe URL (${sanitization.error}): ${r.source_url}`);
+      return null;
+    }
+    return { ...r, source_url: sanitization.url };
+  }).filter(Boolean);
+
   // 1. DEDUPLICATION: Find URLs that already exist in Supabase
-  const urls = rawRecords.map(r => r.source_url).filter(Boolean);
+  const urls = sanitizedRecords.map(r => r.source_url).filter(Boolean);
   const existingUrls = new Set();
   
   if (urls.length > 0) {
@@ -63,9 +75,9 @@ async function processRawRecordsWithGemini(sourceName, rawRecords, rateLimiter) 
     }
   }
 
-  const newRecords = rawRecords.filter(r => !existingUrls.has(r.source_url));
-  const skippedCount = rawRecords.length - newRecords.length;
-  console.log(`Checking ${rawRecords.length} records... Skipped ${skippedCount} existing records. Processing ${newRecords.length} new records with Gemini in batches.`);
+  const newRecords = sanitizedRecords.filter(r => !existingUrls.has(r.source_url));
+  const skippedCount = sanitizedRecords.length - newRecords.length;
+  console.log(`Checking ${sanitizedRecords.length} records... Skipped ${skippedCount} existing records. Processing ${newRecords.length} new records in batches.`);
 
   if (newRecords.length === 0) return 0;
 
@@ -387,62 +399,17 @@ async function autoExpireOpportunities() {
 
 /**
  * Post-upsert cross-source deduplication pass
- * Deactivates newer duplicate listings that share the same normalized_title & normalized_company
+ * Uses multi-factor partition deduplication (city location, season/cohort, engineering specialization)
+ * and metadata quality scoring (preferring richer listings with exact deadlines, descriptions, direct links)
+ * to safely deactivate duplicates without clobbering distinct offices or seasons.
  */
 async function runCrossSourceDeduplication() {
   console.log(`\n=========================================`);
-  console.log(`--- POST-PIPELINE: CROSS-SOURCE DEDUPLICATION ---`);
+  console.log(`--- POST-PIPELINE: MULTI-FACTOR DEDUPLICATION ---`);
   console.log(`=========================================`);
   try {
-    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-    const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
-
-    const { data: rows, error } = await supabase
-      .from('opportunities')
-      .select('id, normalized_title, normalized_company, created_at')
-      .eq('is_active', true)
-      .not('normalized_title', 'is', null)
-      .not('normalized_company', 'is', null)
-      .neq('normalized_company', '__no_company_fallback__')
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.warn(`[Deduplication] Query error: ${error.message}`);
-      return;
-    }
-
-    if (!rows || rows.length === 0) {
-      console.log('[Deduplication] No records eligible for deduplication.');
-      return;
-    }
-
-    const seen = new Map();
-    const dupeIds = [];
-
-    for (const row of rows) {
-      const key = `${row.normalized_title}:::${row.normalized_company}`;
-      if (seen.has(key)) {
-        dupeIds.push(row.id);
-      } else {
-        seen.set(key, row.id);
-      }
-    }
-
-    if (dupeIds.length > 0) {
-      console.log(`[Deduplication] Found ${dupeIds.length} cross-source duplicates. Deactivating...`);
-      const { error: updateErr } = await supabase
-        .from('opportunities')
-        .update({ is_active: false })
-        .in('id', dupeIds);
-
-      if (updateErr) {
-        console.warn(`[Deduplication] Failed to deactivate duplicates: ${updateErr.message}`);
-      } else {
-        console.log(`[Deduplication] Successfully deactivated ${dupeIds.length} duplicate listings.`);
-      }
-    } else {
-      console.log('[Deduplication] No cross-source duplicates found. Database is clean.');
-    }
+    const { runSemanticDeduplication } = require('./dedup-titles');
+    await runSemanticDeduplication(false);
   } catch (err) {
     console.warn(`[Deduplication] Exception during deduplication pass:`, err.message);
   }
@@ -565,14 +532,8 @@ async function main() {
     }, rateLimiter)
   ]);
 
-  // POST-PIPELINE: Cross-Source Deduplication & Expiry Verification
+  // POST-PIPELINE: Multi-Factor Deduplication & Expiry Verification
   await runCrossSourceDeduplication();
-  try {
-    const { runSemanticDeduplication } = require('./dedup-titles');
-    await runSemanticDeduplication(false);
-  } catch (err) {
-    console.warn('[Semantic Dedup] Warning during title deduplication:', err.message);
-  }
   await autoExpireOpportunities();
 
   const totalDuration = ((Date.now() - pipelineStartTime) / 1000).toFixed(1);

@@ -35,6 +35,12 @@
 - [x] Fixed Y Combinator opportunity URL generation and repaired 96 listings in Supabase
 - [x] Streamlined floating dock: nested List, Grid, and Card views under Discover popover
 - [x] Anti-monopoly feed diversification algorithm ensuring balanced startup/MNC/hackathon mix from card #1
+- [x] Central Ingestion URL Sanitizer & Canonicalizer (`scraper/url-sanitizer.js`) enforcing URL invariants and stripping tracking noise
+- [x] Immutable Source URL Guarantee in AI structurer (`scraper/structurer.js`) preventing LLM link mutations
+- [x] Multi-factor partition deduplication by location, season, and specialization (`scraper/dedup-titles.js`)
+- [x] Fixed cross-source deduplication in `pipeline.js` to preserve the record with the most complete metadata rather than strictly the oldest
+- [x] Applied Supabase Migration 10 (link health telemetry columns and `reaper_runs` table)
+- [x] Google OAuth client integration on login and authentication callbacks
 
 ## In Progress
 
@@ -46,7 +52,6 @@
 - [ ] Add `GROQ_API_KEY` validation to `scraper/validate-env.js` (currently checks `GEMINI_API_KEY` while Groq is the active engine)
 - [ ] Align `.vercel/project.json` configs (root vs `frontend/`) to prevent deployment targeting confusion
 - [ ] Sync `frontend/DESIGN.md` with actual Obsidian/Zinc developer design tokens (`globals.css`)
-- [ ] Fix cross-source deduplication in `pipeline.js` to preserve the record with the most complete metadata rather than strictly the oldest
 
 ## Medium Priority
 

@@ -47,6 +47,47 @@ function cleanCompany(company, title) {
 }
 
 /**
+ * Extracts location partition so different office locations (e.g. Bangalore vs Hyderabad)
+ * are NEVER collapsed into duplicates.
+ */
+function extractLocationPartition(record) {
+  const locString = typeof record.eligibility?.location === 'string' ? record.eligibility.location : '';
+  const text = `${record.title || ''} ${locString}`.toLowerCase();
+  const cities = ['bangalore', 'bengaluru', 'hyderabad', 'pune', 'gurgaon', 'gurugram', 'noida', 'mumbai', 'delhi', 'chennai', 'kolkata', 'remote'];
+  for (const city of cities) {
+    if (text.includes(city)) return city.replace('bengaluru', 'bangalore').replace('gurugram', 'gurgaon');
+  }
+  return 'any';
+}
+
+/**
+ * Extracts cohort or seasonal batch (e.g. Summer 2025 vs Summer 2026)
+ */
+function extractSeasonPartition(record) {
+  const text = `${record.title || ''} ${record.description || ''}`.toLowerCase();
+  const seasons = ['summer 2025', 'summer 2026', 'fall 2025', 'fall 2026', 'winter 2025', 'winter 2026', 'spring 2025', 'spring 2026', 'batch 2025', 'batch 2026'];
+  for (const s of seasons) {
+    if (text.includes(s)) return s;
+  }
+  return 'any';
+}
+
+/**
+ * Extracts distinct engineering specializations (Backend != Frontend != Mobile)
+ */
+function extractSpecialization(title) {
+  const t = (title || '').toLowerCase();
+  if (t.includes('frontend') || t.includes('front end') || t.includes('ui/ux') || t.includes('web developer')) return 'frontend';
+  if (t.includes('backend') || t.includes('back end') || t.includes('api')) return 'backend';
+  if (t.includes('fullstack') || t.includes('full stack')) return 'fullstack';
+  if (t.includes('data science') || t.includes('machine learning') || t.includes('ai') || t.includes('ml')) return 'ai_ml';
+  if (t.includes('devops') || t.includes('sre') || t.includes('cloud')) return 'devops';
+  if (t.includes('mobile') || t.includes('android') || t.includes('ios')) return 'mobile';
+  if (t.includes('cybersecurity') || t.includes('security')) return 'security';
+  return 'general';
+}
+
+/**
  * Computes a quality score for an opportunity record:
  * - Higher confidence deadlines score higher
  * - Actual deadline presence adds points
@@ -80,7 +121,7 @@ async function runSemanticDeduplication(dryRun = true) {
   while (true) {
     const { data, error } = await supabase
       .from('opportunities')
-      .select('id, title, type, normalized_company, deadline, deadline_confidence, description, domain_tags, source_url, created_at')
+      .select('id, title, type, normalized_company, deadline, deadline_confidence, description, domain_tags, source_url, created_at, eligibility')
       .eq('is_active', true)
       .range(from, from + pageSize - 1);
 
@@ -102,14 +143,19 @@ async function runSemanticDeduplication(dryRun = true) {
   for (const record of records) {
     const normTitle = cleanTitle(record.title);
     const normCompany = cleanCompany(record.normalized_company, record.title);
+    const locPart = extractLocationPartition(record);
+    const seasonPart = extractSeasonPartition(record);
+    const specPart = extractSpecialization(record.title);
 
-    // If hackathon or competition, group primarily by cleaned title (e.g. "hackcelestial 3 0")
-    // If job/internship, group by "company:::cleanedTitle" (or just cleanedTitle if generic)
+    // If hackathon or competition, group primarily by cleaned title + season
+    // If job/internship, partition by company + title + specialization + location + season
     let key;
     if (record.type === 'hackathon' || record.type === 'competition' || record.type === 'open-source program') {
-      key = `hackathon:::${normTitle}`;
+      key = `hackathon:::${normTitle}:::${seasonPart}`;
     } else {
-      key = normCompany ? `job:::${normCompany}:::${normTitle}` : `generic_job:::${normTitle}`;
+      key = normCompany 
+        ? `job:::${normCompany}:::${normTitle}:::${specPart}:::${locPart}:::${seasonPart}` 
+        : `generic_job:::${normTitle}:::${specPart}:::${locPart}`;
     }
 
     if (!groups.has(key)) {

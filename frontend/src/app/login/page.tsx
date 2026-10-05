@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { signIn, signUp, signInWithGithub } from "@/app/actions";
+import { signIn, signUp, signInWithGithub, signInWithGoogle } from "@/app/actions";
 import { SignIn1 } from "@/components/ui/modern-stunning-sign-in";
 
 export default async function LoginPage(
@@ -19,6 +19,7 @@ export default async function LoginPage(
       onSignInWithEmail={signIn}
       onSignUpWithEmail={signUp}
       onSignInWithGithub={signInWithGithub}
+      onSignInWithGoogle={signInWithGoogle}
       defaultError={searchParams?.error}
     />
   );

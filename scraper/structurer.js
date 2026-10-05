@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Groq = require('groq-sdk');
 const axios = require('axios');
+const { sanitizeOpportunityUrl } = require('./url-sanitizer');
 
 // Default to true — the Gemini free-tier API key is currently denied (403).
 // NVIDIA NIM and Groq handle structuring.
@@ -67,9 +68,13 @@ function validateRecord(parsed, card = {}) {
   }
 
   parsed.deadline_confidence = card.deadline_confidence || 'none';
-  if (!parsed.source_url && card.source_url) {
-    parsed.source_url = card.source_url;
-  }
+
+  // IMMUTABLE SOURCE URL GUARANTEE:
+  // Architecturally enforce that LLM structuring can never mutate or hallucinate the URL.
+  const rawUrl = card.source_url || parsed.source_url;
+  const sanitization = sanitizeOpportunityUrl(rawUrl);
+  parsed.source_url = sanitization.valid ? sanitization.url : rawUrl;
+
   return parsed;
 }
 

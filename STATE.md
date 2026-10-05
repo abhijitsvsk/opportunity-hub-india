@@ -19,6 +19,7 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **1-Click Google Calendar Sync**: Embedded one-click GCal event creation with title, deadline timestamps, and official application URL.
 - **Company Logo Hydration**: Automated high-res favicon and brand logo resolution via Google Favicon API in `branding.ts`, with graceful fallback to styled monograms.
 - **Smart Link Health Reaper Engine (`scraper/reaper/` & `.github/workflows/reaper.yml`)**: Phase 1 Audit-Only link verification featuring an 8-state classification engine (`HEALTHY`, `DEAD`, `CLOSED`, `BLOCKED`, `ACCESS_RESTRICTED`, `TEMP_ERROR`, `SUSPECT`, `SOFT_DEAD`), SSRF security guards, per-registrable-domain task queue (concurrency 12 global, max 2 per host), domain circuit breaker (min sample 10, >50% failure marks `DEGRADED`), 24h ingestion grace period, rich `$GITHUB_STEP_SUMMARY` reporting, and sanitized JSON artifact generation with 0 database deactivations (`is_active` untouched).
+- **Authentication & OAuth Integration**: Supabase SSR authentication supporting Email/Password, GitHub OAuth, and Google OAuth with seamless callback handling, error propagation, and onboarding redirection.
 - **Onboarding Flow**: 2-step profile onboarding (`user_profiles`) capturing tier, graduation year, tech stack, focus area. Redirects seamlessly upon first registration.
 - **Multi-View Dashboard Feed**:
   - Calm List (`OpportunityRow.tsx`) with flexible wrapping and touch-friendly actions
@@ -58,6 +59,12 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **SEO Opportunity Detail Pages (`/opportunity/[id]`)**: Server-rendered detail pages with Supabase fetch, JSON-LD structured data (JobPosting schema), dynamic metadata, per-opportunity OG images, company logos, deadline badges, domain tag pills, and "Apply" CTA. Includes `sitemap.ts` (all active opportunities) and `robots.ts`.
 - **PostHog Analytics**: Free-tier pageview tracking with `PostHogProvider` (Suspense-wrapped), graceful skip when `NEXT_PUBLIC_POSTHOG_KEY` not configured, route-change capture via `usePathname`/`useSearchParams`.
 
+- **Central Ingestion URL Sanitizer & Canonicalizer (`scraper/url-sanitizer.js`)**: Enforces strict URL invariants across the entire ingestion pipeline. Automatically collapses redundant slashes, upgrades protocols, unwraps auth gates, purges tracking/session tokens, canonicalizes Y Combinator career links, and rejects private Discord channel permalinks before database insertion. Unit test suite in `tests/test-url-sanitizer.js`.
+- **Immutable Source URL Guarantee (`scraper/structurer.js`)**: AI structurer strictly preserves the raw scraped source URL, preventing LLMs (NVIDIA NIM / Groq / Gemini) from mutating, truncating, or hallucinating application links.
+- **Multi-Factor Partition Deduplication (`scraper/dedup-titles.js` & `scraper/pipeline.js`)**: Replaced naive title+company deduplication with multi-factor partitioning by office location (`bangalore`, `hyderabad`, `pune`, etc.), cohort/season (`Summer 2025`, `Fall 2026`), and engineering specialization (`frontend`, `backend`, `mobile`). Integrates metadata quality scoring (`getRecordScore`) so listings with verified deadlines, comprehensive descriptions, and direct company links are preserved over incomplete records.
+- **Link Health Telemetry Schema (Migration 10)**: Applied to Supabase production database, adding `link_health_status`, `consecutive_failures`, `audit_failure_count`, `last_checked_at`, `last_http_status`, `last_health_reason`, `last_final_url`, `deactivated_at`, `reaper_protected`, and `reaper_runs` table with row-level security.
+- **Custom Domain Integration**: Configured `opphunt.in` custom domain on Vercel with apex A record (`76.76.21.21`) and CNAME record (`cname.vercel-dns.com`).
+
 ## What Is Partially Working / Needs Attention
 
 - **Devfolio Scraper**: Relies on styled-component class prefix matching in DOM; breaks if Devfolio updates frontend classes.
@@ -70,13 +77,12 @@ Active development — Core platform is built, deployed, and operational. Focus 
 ## What Is Not Yet Implemented
 
 - Push notifications (Web Push API)
-- Automated scraper test suite (`npm test` is a no-op placeholder)
 - Frontend client caching/query deduplication layer (e.g. SWR/TanStack Query)
 
 ## Known Issues
 
-- **Oldest record preference**: Cross-source deduplication preserves the oldest record (`created_at ASC`), potentially deactivating newer listings that have richer metadata.
 - **Synthetic deadlines**: GitHub internship listings receive an artificial 30-day deadline with `deadline_confidence: 'unknown'`.
+- **GoDaddy .in KYC Verification**: `opphunt.in` domain awaiting registry KYC processing window before public DNS resolution goes fully active.
 
 ## Important: Do Not Change Without Consideration
 
