@@ -23,8 +23,8 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **Multi-View Dashboard Feed**:
   - Calm List (`OpportunityRow.tsx`) with flexible wrapping and touch-friendly actions
   - Relaxed Grid (`OpportunityGridCard.tsx`) with responsive columns and action row
-  - Mobile Card Snap (`OpportunityCard.tsx`) with dynamic viewport height, full-width mobile card, and TikTok-style overlaid action pill
-  - Unified Floating Dock (`dock-two.tsx`) with navigation/view separation, active dots, profile/logout popover, and iOS safe-area insets (`env(safe-area-inset-bottom)`)
+  - Unified Floating Dock (`dock-two.tsx`): Streamlined to 3 primary actions (`Discover`, `Saved`, `Profile`). Clicking `Discover` reveals an interactive popover allowing users to switch between `List View`, `Grid View`, and `Card Snap`.
+  - Anti-Monopoly Feed Diversification (`feed-diversification.ts`): Sliding-window fair-queuing algorithm preventing any single ecosystem (such as Unstop) from dominating the feed. Automatically interleaves Y Combinator startup roles, Wellfound, Devfolio hackathons, open-source programs, and company jobs right from card #1.
   - Compact single-bar header on mobile and desktop with unified instant search and sort controls (`Best Match | Closing Soon | Newest`)
   - Filter state, search, sort, and view mode persistence
 - **Decoupled Business Logic**: `src/lib/opportunities.ts` houses `computeMatchScore` and `cleanDomainTags` independently from UI components.

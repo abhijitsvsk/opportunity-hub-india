@@ -31,6 +31,10 @@
 - [x] PostHog Analytics client integration
 - [x] Production hardening: security headers, global error.tsx and not-found.tsx boundaries
 - [x] Dedicated `/profile` settings view with instant Match Score preference persistence
+- [x] Phase 1 Link Health Reaper with 8-state classifier, SSRF protection, and domain circuit breaker
+- [x] Fixed Y Combinator opportunity URL generation and repaired 96 listings in Supabase
+- [x] Streamlined floating dock: nested List, Grid, and Card views under Discover popover
+- [x] Anti-monopoly feed diversification algorithm ensuring balanced startup/MNC/hackathon mix from card #1
 
 ## In Progress
 
