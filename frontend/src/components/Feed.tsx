@@ -6,6 +6,7 @@ import {
   Code2, Briefcase, LayoutGrid, Rows3, Search, X, Building2
 } from "lucide-react";
 import { useState, useRef, useTransition, useOptimistic, useCallback, useEffect, useMemo, startTransition as reactStartTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toggleBookmark, updateApplicationStatus, signOut } from "@/app/actions";
 import Link from "next/link";
 import { Opportunity, UserSavedStatus } from "@/types";
@@ -13,7 +14,7 @@ import OpportunityCard from "./OpportunityCard";
 import OpportunityRow from "./OpportunityRow";
 import OpportunityGridCard from "./OpportunityGridCard";
 import QuickViewDrawer from "./QuickViewDrawer";
-import { Dock } from "./ui/dock-two";
+import { Dock, DockItem } from "./ui/dock-two";
 import { MeshGradientSVG } from "./ui/shader-svg";
 import { computeMatchScore } from "@/lib/opportunities";
 import { matchesBatchFilter, BATCH_DEFINITIONS, BatchFilterKey } from "@/lib/eligibility";
@@ -57,8 +58,7 @@ export default function Feed({
   const [isCompanyFilterOpen, setIsCompanyFilterOpen] = useState(false);
   const [companySearchQuery, setCompanySearchQuery] = useState("");
   const [drawerCard, setDrawerCard] = useState<Opportunity | null>(null);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showDiscoverMenu, setShowDiscoverMenu] = useState(false);
+  const router = useRouter();
   const [, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -131,6 +131,13 @@ export default function Feed({
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'saved') {
+        setActiveTab('saved');
+      }
+    }
 
     // Responsive initial view mode
     const isMobile = window.innerWidth < 768;
@@ -474,36 +481,44 @@ export default function Feed({
 
   const activeFilterCount = activeFilters.has("All") ? 0 : activeFilters.size;
 
-  // Dock items — Navigation section (Discover, Saved, Profile)
-  // List, Grid, and Card views are nested under "Discover"
-  const dockItems = [
+  // Dock items:
+  // Views are ALWAYS visible to the left:
+  // [ Rows3 (List) ] [ LayoutGrid (Grid) ] [ Layers (Card) ] | (separator) [ Compass (Discover) ] [ Bookmark (Saved) ] [ User (Profile) ]
+  const dockItems: DockItem[] = [
+    {
+      icon: Rows3,
+      label: "List View",
+      onClick: () => handleViewModeChange("list"),
+      isActive: viewMode === "list",
+    },
+    {
+      icon: LayoutGrid,
+      label: "Grid View",
+      onClick: () => handleViewModeChange("grid"),
+      isActive: viewMode === "grid",
+    },
+    {
+      icon: Layers,
+      label: "Card Snap",
+      onClick: () => handleViewModeChange("card"),
+      isActive: viewMode === "card",
+    },
     {
       icon: Compass,
-      label: `Discover • ${viewMode === 'list' ? 'List' : viewMode === 'grid' ? 'Grid' : 'Card'}`,
-      onClick: () => {
-        setActiveTab("discover");
-        setShowDiscoverMenu(prev => !prev);
-        setShowProfileMenu(false);
-      },
+      label: "Discover",
+      onClick: () => setActiveTab("discover"),
       isActive: activeTab === "discover",
     },
     {
       icon: Bookmark,
       label: `Saved (${optimisticSaved.size})`,
-      onClick: () => {
-        setActiveTab("saved");
-        setShowDiscoverMenu(false);
-        setShowProfileMenu(false);
-      },
+      onClick: () => setActiveTab("saved"),
       isActive: activeTab === "saved",
     },
     {
       icon: User,
       label: "Profile",
-      onClick: () => {
-        setShowProfileMenu(prev => !prev);
-        setShowDiscoverMenu(false);
-      },
+      onClick: () => router.push("/profile"),
       isActive: false,
     },
   ];
@@ -1013,103 +1028,7 @@ export default function Feed({
 
         {/* ── Floating Dock Navigation (Fixed bottom center — with iOS safe area support) ── */}
         <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-16px)]">
-          <Dock items={dockItems} />
-
-          {/* Discover view mode switcher popover */}
-          {showDiscoverMenu && (
-            <>
-              <div className="fixed inset-0 z-30" onClick={() => setShowDiscoverMenu(false)} />
-              <div className="absolute bottom-full left-0 mb-2.5 w-48 bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl p-1.5 z-50 animate-fadeIn">
-                <div className="px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-500 border-b border-zinc-800/80 mb-1">
-                  View Mode
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleViewModeChange("list");
-                    setShowDiscoverMenu(false);
-                  }}
-                  className={cn(
-                    "flex items-center justify-between w-full px-2.5 py-2 text-xs font-medium rounded-xl transition-all cursor-pointer",
-                    viewMode === "list"
-                      ? "bg-white text-black font-semibold shadow-sm"
-                      : "text-zinc-300 hover:text-white hover:bg-zinc-800"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <Rows3 size={15} />
-                    <span>List View</span>
-                  </div>
-                  {viewMode === "list" && <CheckCircle2 size={13} className="text-black" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleViewModeChange("grid");
-                    setShowDiscoverMenu(false);
-                  }}
-                  className={cn(
-                    "flex items-center justify-between w-full px-2.5 py-2 text-xs font-medium rounded-xl transition-all cursor-pointer",
-                    viewMode === "grid"
-                      ? "bg-white text-black font-semibold shadow-sm"
-                      : "text-zinc-300 hover:text-white hover:bg-zinc-800"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <LayoutGrid size={15} />
-                    <span>Grid View</span>
-                  </div>
-                  {viewMode === "grid" && <CheckCircle2 size={13} className="text-black" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleViewModeChange("card");
-                    setShowDiscoverMenu(false);
-                  }}
-                  className={cn(
-                    "flex items-center justify-between w-full px-2.5 py-2 text-xs font-medium rounded-xl transition-all cursor-pointer",
-                    viewMode === "card"
-                      ? "bg-white text-black font-semibold shadow-sm"
-                      : "text-zinc-300 hover:text-white hover:bg-zinc-800"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <Layers size={15} />
-                    <span>Card Snap</span>
-                  </div>
-                  {viewMode === "card" && <CheckCircle2 size={13} className="text-black" />}
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* Profile popover menu */}
-          {showProfileMenu && (
-            <>
-              <div className="fixed inset-0 z-30" onClick={() => setShowProfileMenu(false)} />
-              <div className="absolute bottom-full right-0 mb-2.5 w-40 bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-xl shadow-2xl p-1 z-50 animate-fadeIn">
-                <Link
-                  href="/profile"
-                  onClick={() => setShowProfileMenu(false)}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-                >
-                  <User size={14} />
-                  View Profile
-                </Link>
-                <button
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    reactStartTransition(() => { signOut(); });
-                  }}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                >
-                  <LogOut size={14} />
-                  Sign Out
-                </button>
-              </div>
-            </>
-          )}
+          <Dock items={dockItems} separator={2} />
         </div>
 
         {/* â”€â”€ Slide-over QuickViewDrawer â”€â”€ */}

@@ -24,7 +24,7 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **Multi-View Dashboard Feed**:
   - Calm List (`OpportunityRow.tsx`) with flexible wrapping and touch-friendly actions
   - Relaxed Grid (`OpportunityGridCard.tsx`) with responsive columns and action row
-  - Unified Floating Dock (`dock-two.tsx`): Streamlined to 3 primary actions (`Discover`, `Saved`, `Profile`). Clicking `Discover` reveals an interactive popover allowing users to switch between `List View`, `Grid View`, and `Card Snap`.
+  - Unified Floating Dock (`dock-two.tsx`): On the Discover dashboard, view modes (`List View`, `Grid View`, `Card Snap`) are permanently pinned and visible on the left side of the dock, cleanly separated by a vertical divider from navigation tabs (`Discover`, `Saved`, `Profile`). When navigating to `/profile`, view mode switchers are hidden, displaying a clean 3-tab dock with active Profile highlight and a top header Sign Out action.
   - Anti-Monopoly Feed Diversification (`feed-diversification.ts`): Sliding-window fair-queuing algorithm preventing any single ecosystem (such as Unstop) from dominating the feed. Automatically interleaves Y Combinator startup roles, Wellfound, Devfolio hackathons, open-source programs, and company jobs right from card #1.
   - Compact single-bar header on mobile and desktop with unified instant search and sort controls (`Best Match | Closing Soon | Newest`)
   - Filter state, search, sort, and view mode persistence

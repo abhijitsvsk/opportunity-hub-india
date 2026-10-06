@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, User, Sparkles, AlertCircle, Save, ExternalLink } from "lucide-react";
-import { updateUserProfile } from "@/app/actions";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, CheckCircle2, User, Sparkles, AlertCircle, Save, ExternalLink, Compass, Bookmark, LogOut } from "lucide-react";
+import { updateUserProfile, signOut } from "@/app/actions";
+import { Dock, DockItem } from "@/components/ui/dock-two";
 
 const COLLEGE_TIERS = [
   "IIT/IISc", 
@@ -39,9 +41,31 @@ interface ProfileFormProps {
 }
 
 export default function ProfileForm({ initialProfile, userEmail }: ProfileFormProps) {
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const dockItems: DockItem[] = [
+    {
+      icon: Compass,
+      label: "Discover",
+      onClick: () => router.push("/dashboard"),
+      isActive: false,
+    },
+    {
+      icon: Bookmark,
+      label: "Saved",
+      onClick: () => router.push("/dashboard?tab=saved"),
+      isActive: false,
+    },
+    {
+      icon: User,
+      label: "Profile",
+      onClick: () => {},
+      isActive: true,
+    },
+  ];
 
   const [selectedTags, setSelectedTags] = useState<string[]>(() => {
     if (initialProfile?.tech_stack && Array.isArray(initialProfile.tech_stack)) {
@@ -130,7 +154,7 @@ export default function ProfileForm({ initialProfile, userEmail }: ProfileFormPr
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-zinc-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#0a0a0c] text-zinc-100 py-8 px-4 sm:px-6 lg:px-8 pb-32">
       <div className="max-w-3xl mx-auto">
         
         {/* Navigation & Header */}
@@ -143,9 +167,19 @@ export default function ProfileForm({ initialProfile, userEmail }: ProfileFormPr
             Back to Dashboard
           </Link>
 
-          <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400">
-            Account Settings
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400">
+              Account Settings
+            </span>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 border border-zinc-800 transition-colors cursor-pointer"
+            >
+              <LogOut size={13} />
+              Sign Out
+            </button>
+          </div>
         </div>
 
         {/* Title Card */}
@@ -426,6 +460,11 @@ export default function ProfileForm({ initialProfile, userEmail }: ProfileFormPr
           </div>
 
         </form>
+      </div>
+
+      {/* ── Floating Navigation Dock (Fixed bottom center) ── */}
+      <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-16px)]">
+        <Dock items={dockItems} />
       </div>
     </div>
   );
