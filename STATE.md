@@ -19,7 +19,7 @@ Active development — Core platform is built, deployed, and operational. Focus 
 - **1-Click Google Calendar Sync**: Embedded one-click GCal event creation with title, deadline timestamps, and official application URL.
 - **Company Logo Hydration**: Automated high-res favicon and brand logo resolution via Google Favicon API in `branding.ts`, with graceful fallback to styled monograms.
 - **Smart Link Health Reaper Engine (`scraper/reaper/` & `.github/workflows/reaper.yml`)**: Phase 1 Audit-Only link verification featuring an 8-state classification engine (`HEALTHY`, `DEAD`, `CLOSED`, `BLOCKED`, `ACCESS_RESTRICTED`, `TEMP_ERROR`, `SUSPECT`, `SOFT_DEAD`), SSRF security guards, per-registrable-domain task queue (concurrency 12 global, max 2 per host), domain circuit breaker (min sample 10, >50% failure marks `DEGRADED`), 24h ingestion grace period, rich `$GITHUB_STEP_SUMMARY` reporting, and sanitized JSON artifact generation with 0 database deactivations (`is_active` untouched).
-- **Authentication & OAuth Integration**: Supabase SSR authentication supporting Email/Password, GitHub OAuth, and Google OAuth with seamless callback handling, error propagation, and onboarding redirection.
+- **Authentication & OAuth Integration**: Supabase SSR authentication streamlined to 1-click Google OAuth and Email/Password with seamless callback handling, error propagation, and onboarding redirection.
 - **Onboarding Flow**: 2-step profile onboarding (`user_profiles`) capturing tier, graduation year, tech stack, focus area. Redirects seamlessly upon first registration.
 - **Multi-View Dashboard Feed**:
   - Calm List (`OpportunityRow.tsx`) with flexible wrapping and touch-friendly actions
