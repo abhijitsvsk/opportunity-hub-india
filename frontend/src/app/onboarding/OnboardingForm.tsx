@@ -232,7 +232,7 @@ export default function OnboardingForm({ initialProfile, userEmail }: Onboarding
                     name="full_name"
                     required
                     defaultValue={initialProfile?.full_name || ""}
-                    placeholder="e.g. Abhijit Sharma"
+                    placeholder="e.g. Steve Rogers"
                     className="bg-surface-lowest border border-surface-high/50 rounded-[10px] px-3.5 py-[11px] text-[16px] md:text-[13px] text-text-main focus:border-primary focus:ring-2 focus:ring-primary/12 outline-none transition-all"
                   />
                 </div>

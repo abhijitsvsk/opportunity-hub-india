@@ -233,7 +233,7 @@ export default function ProfileForm({ initialProfile, userEmail }: ProfileFormPr
                   name="full_name"
                   required
                   defaultValue={initialProfile?.full_name || ""}
-                  placeholder="e.g. Rahul Sharma"
+                  placeholder="e.g. Steve Rogers"
                   className="w-full bg-[#18181c] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-500 transition-colors"
                 />
               </div>
