@@ -38,6 +38,8 @@
 - [x] Central Ingestion URL Sanitizer & Canonicalizer (`scraper/url-sanitizer.js`) enforcing URL invariants and stripping tracking noise
 - [x] Immutable Source URL Guarantee in AI structurer (`scraper/structurer.js`) preventing LLM link mutations
 - [x] Multi-factor partition deduplication by location, season, and specialization (`scraper/dedup-titles.js`)
+- [x] Google Search Console site ownership verification (`google-site-verification`) and dynamic XML sitemap submission (`/sitemap.xml`)
+- [x] Comprehensive India GEO optimization (`geo.region: IN`, `geo.placename: India`, coordinates, Schema.org `JobPosting` and `WebSite` localization)
 - [x] Fixed cross-source deduplication in `pipeline.js` to preserve the record with the most complete metadata rather than strictly the oldest
 - [x] Applied Supabase Migration 10 (link health telemetry columns and `reaper_runs` table)
 - [x] Google OAuth client integration on login and authentication callbacks
