@@ -27,13 +27,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const company = extractCompanyName(opportunity.normalized_company || opportunity.title);
   const truncatedDescription = opportunity.description.substring(0, 160) + (opportunity.description.length > 160 ? '...' : '');
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in';
   
   return {
     title: `${opportunity.title} | OpportunityHub India`,
     description: truncatedDescription,
+    alternates: {
+      canonical: `${baseUrl}/opportunity/${resolvedParams.id}`,
+    },
     openGraph: {
       title: `${opportunity.title} | OpportunityHub India`,
       description: truncatedDescription,
+      url: `${baseUrl}/opportunity/${resolvedParams.id}`,
       images: [
         {
           url: `/opportunity/${resolvedParams.id}/opengraph-image`,
@@ -85,6 +90,7 @@ export default async function OpportunityPage({ params }: Props) {
       address: {
         '@type': 'PostalAddress',
         addressLocality: opportunity.location || 'India',
+        addressCountry: 'IN',
       }
     }
   };

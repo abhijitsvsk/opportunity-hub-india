@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: "Opportunity Hub — Internships, Hackathons & Fellowships for Indian CS Students 🇮🇳",
   description: "Stop missing deadlines. Discover and track 1,500+ verified tech internships, hackathons, and open-source programs ranked for your profile.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in'),
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in',
+  },
   openGraph: {
     title: "Opportunity Hub — Tech Opportunities for Indian CS Students 🇮🇳",
     description: "Discover and track 1,500+ verified internships, hackathons, and open-source programs ranked for your profile.",
@@ -132,8 +135,22 @@ export default async function LandingPage() {
     ];
   }
 
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Opportunity Hub India",
+    alternateName: ["OppHunt", "OpportunityHub"],
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://opphunt.in",
+    description: "Intelligent tech opportunity aggregator tailored for Indian CS students and early-career developers.",
+    inLanguage: "en-IN",
+  };
+
   return (
     <div className="w-full min-h-screen overflow-x-hidden overflow-y-auto bg-[#09090b] text-[#ededed] flex flex-col relative selection:bg-zinc-800 selection:text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
 
       {/* Atmospheric subtle radial glow */}
       <div className="fixed inset-0 z-0 pointer-events-none">

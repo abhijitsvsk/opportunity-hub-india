@@ -1,7 +1,13 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { signIn, signUp, signInWithGoogle } from "@/app/actions";
 import { SignIn1 } from "@/components/ui/modern-stunning-sign-in";
+
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Sign in to OpportunityHub India to access verified tech internships, hackathons, and developer opportunities.",
+};
 
 export default async function LoginPage(
   props: { searchParams: Promise<{ error?: string }> }

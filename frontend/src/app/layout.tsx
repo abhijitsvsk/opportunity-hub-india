@@ -24,8 +24,25 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in'),
-  title: "Opportunity Hub India — Verified Tech Opportunities",
+  title: {
+    default: "Opportunity Hub India — Verified Tech Opportunities",
+    template: "%s | OpportunityHub India",
+  },
   description: "Aggregating 1,500+ verified internships, hackathons, and open-source programs for Indian CS students.",
+  keywords: [
+    "tech internships India",
+    "hackathons India",
+    "CS student internships",
+    "software engineer internships India",
+    "open source programs",
+    "fresher developer jobs",
+    "OppHunt",
+    "Opportunity Hub India",
+    "Indian engineering students"
+  ],
+  authors: [{ name: "OpportunityHub India" }],
+  creator: "OpportunityHub India",
+  publisher: "OpportunityHub India",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -46,10 +63,27 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "OpportunityHub India",
     locale: "en_IN",
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in',
+    title: "Opportunity Hub India — Verified Tech Opportunities",
+    description: "Aggregating 1,500+ verified internships, hackathons, and open-source programs for Indian CS students.",
   },
   twitter: {
     card: "summary_large_image",
     creator: "@opphub",
+    title: "Opportunity Hub India — Verified Tech Opportunities",
+    description: "Aggregating 1,500+ verified internships, hackathons, and open-source programs for Indian CS students.",
+  },
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in',
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "NtbGqEFdaFTCasD6t3lYN5ByDNOTQSfPqiC-qggQfxE",
+  },
+  other: {
+    "geo.region": "IN",
+    "geo.placename": "India",
+    "geo.position": "20.5937;78.9629",
+    "ICBM": "20.5937, 78.9629",
   },
 };
 

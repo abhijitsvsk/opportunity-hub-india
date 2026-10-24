@@ -1,12 +1,13 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in';
   return {
     rules: {
       userAgent: '*',
-      allow: ['/', '/api/og'],
-      disallow: ['/admin', '/api/'],
+      allow: ['/', '/opportunity/', '/login', '/api/og'],
+      disallow: ['/admin', '/api/', '/dashboard', '/profile', '/onboarding'],
     },
-    sitemap: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://opphunt.in'}/sitemap.xml`,
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
